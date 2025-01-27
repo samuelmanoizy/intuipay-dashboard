@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 declare global {
   interface Window {
@@ -11,6 +13,7 @@ declare global {
 export function TransactionInterface() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [amount, setAmount] = useState("10");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -22,17 +25,22 @@ export function TransactionInterface() {
         console.log("Transaction successful", results);
         toast({
           title: "Transaction Successful",
-          description: "Your deposit has been processed successfully.",
+          description: "Your transaction has been processed successfully.",
         });
         // In a real app, you'd update the balance from your backend
-        setBalance((prev) => prev + 10);
-        setTransactions((prev) => [...prev, { type: "deposit", amount: 10, date: new Date() }]);
+        const transactionAmount = parseFloat(amount);
+        setBalance((prev) => prev + transactionAmount);
+        setTransactions((prev) => [...prev, { 
+          type: results.type || "deposit", 
+          amount: transactionAmount, 
+          date: new Date() 
+        }]);
       })
       .on("FAILED", (results: any) => {
         console.log("Transaction failed", results);
         toast({
           title: "Transaction Failed",
-          description: "There was an error processing your deposit.",
+          description: "There was an error processing your transaction.",
           variant: "destructive",
         });
       });
@@ -40,7 +48,14 @@ export function TransactionInterface() {
     return () => {
       // Cleanup if needed
     };
-  }, []);
+  }, [amount]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (!isNaN(Number(value)) && Number(value) >= 0) {
+      setAmount(value);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -50,18 +65,47 @@ export function TransactionInterface() {
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Deposit Funds</h2>
-        <button
-          className="intaSendPayButton"
-          data-amount="10"
-          data-currency="KES"
-          data-email="joe@doe.com"
-          data-first_name="JOE"
-          data-last_name="DOE"
-          data-country="KE"
-        >
-          DEPOSIT
-        </button>
+        <h2 className="text-2xl font-bold mb-4">Transaction Amount</h2>
+        <div className="flex gap-4 items-center">
+          <Input
+            type="number"
+            min="0"
+            value={amount}
+            onChange={handleAmountChange}
+            className="max-w-[200px]"
+            placeholder="Enter amount"
+          />
+          <span className="text-sm text-gray-500">KES</span>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Actions</h2>
+        <div className="flex gap-4">
+          <button
+            className="intaSendPayButton"
+            data-amount={amount}
+            data-currency="KES"
+            data-email="joe@doe.com"
+            data-first_name="JOE"
+            data-last_name="DOE"
+            data-country="KE"
+          >
+            DEPOSIT
+          </button>
+          <button
+            className="intaSendPayButton"
+            data-amount={amount}
+            data-currency="KES"
+            data-email="joe@doe.com"
+            data-first_name="JOE"
+            data-last_name="DOE"
+            data-country="KE"
+            data-method="withdraw"
+          >
+            WITHDRAW
+          </button>
+        </div>
       </Card>
 
       <Card className="p-6">
