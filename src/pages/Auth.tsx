@@ -20,9 +20,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Define interface for profile data
 interface Profile {
   id: string;
-  email: string;
   username: string;
   secret_id_number: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const signUpSchema = z.object({
@@ -101,14 +102,14 @@ export default function Auth() {
     try {
       setIsLoading(true);
       
-      // First check if email already exists
+      // First check if username already exists
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
-        .select('email')
-        .eq('email', values.email)
-        .single();
+        .select('username')
+        .eq('username', values.username)
+        .maybeSingle();
 
-      if (existingUserError && existingUserError.code !== 'PGRST116') {
+      if (existingUserError) {
         throw existingUserError;
       }
 
@@ -116,7 +117,7 @@ export default function Auth() {
         toast({
           variant: "destructive",
           title: "Error creating account",
-          description: "This email is already registered. Please try signing in instead.",
+          description: "This username is already taken. Please choose another one.",
         });
         return;
       }
@@ -202,7 +203,7 @@ export default function Auth() {
         .select<"profiles", Profile>()
         .eq("username", values.username)
         .eq("secret_id_number", values.secretIdNumber)
-        .single();
+        .maybeSingle();
 
       if (profileError || !profile) {
         throw new Error("Invalid username or secret ID number. Please try again.");
