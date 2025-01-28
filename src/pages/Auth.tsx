@@ -122,26 +122,28 @@ export default function Auth() {
         return;
       }
 
+      // Sign up the user
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
+        options: {
+          data: {
+            username: values.username,
+            secret_id_number: values.secretIdNumber,
+          },
+        },
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        if (signUpError.message === "User already registered") {
+          throw new Error("This email is already registered. Please try signing in instead.");
+        }
+        throw signUpError;
+      }
 
       if (!signUpData.user) {
         throw new Error("Failed to create user account");
       }
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          username: values.username,
-          secret_id_number: values.secretIdNumber,
-        })
-        .eq("id", signUpData.user.id);
-
-      if (profileError) throw profileError;
 
       toast({
         title: "Account created successfully!",
