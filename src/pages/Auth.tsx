@@ -14,11 +14,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const signUpSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email("Please enter a valid email address"),
   password: z
     .string()
     .min(7, "Password must be at least 7 characters")
@@ -35,7 +35,7 @@ const signUpSchema = z.object({
 });
 
 const signInSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -92,12 +92,33 @@ export default function Auth() {
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     try {
       setIsLoading(true);
-      const { error: signUpError } = await supabase.auth.signUp({
+      
+      // First check if email already exists
+      const { data: existingUsers } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', values.email)
+        .single();
+
+      if (existingUsers) {
+        toast({
+          variant: "destructive",
+          title: "Error creating account",
+          description: "This email is already registered. Please try signing in instead.",
+        });
+        return;
+      }
+
+      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
       });
 
       if (signUpError) throw signUpError;
+
+      if (!signUpData.user) {
+        throw new Error("Failed to create user account");
+      }
 
       const { error: profileError } = await supabase
         .from("profiles")
@@ -105,7 +126,7 @@ export default function Auth() {
           username: values.username,
           secret_id_number: values.secretIdNumber,
         })
-        .eq("id", (await supabase.auth.getUser()).data.user?.id);
+        .eq("id", signUpData.user.id);
 
       if (profileError) throw profileError;
 
@@ -118,7 +139,7 @@ export default function Auth() {
       toast({
         variant: "destructive",
         title: "Error creating account",
-        description: error.message,
+        description: error.message || "Failed to create account. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -128,12 +149,21 @@ export default function Auth() {
   const onSignIn = async (values: z.infer<typeof signInSchema>) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message === "Invalid login credentials") {
+          throw new Error("Invalid email or password. Please try again.");
+        }
+        throw error;
+      }
+
+      if (!data.user) {
+        throw new Error("No user data returned from authentication");
+      }
 
       toast({
         title: "Signed in successfully!",
@@ -143,7 +173,7 @@ export default function Auth() {
       toast({
         variant: "destructive",
         title: "Error signing in",
-        description: error.message,
+        description: error.message || "Failed to sign in. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -153,15 +183,23 @@ export default function Auth() {
   const onForgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {
     try {
       setIsLoading(true);
-      const { data: profiles, error: profileError } = await supabase
+      
+      // First verify username and secret ID match
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select()
         .eq("username", values.username)
         .eq("secret_id_number", values.secretIdNumber)
         .single();
 
-      if (profileError || !profiles) {
-        throw new Error("Invalid username or secret ID number");
+      if (profileError || !profile) {
+        throw new Error("Invalid username or secret ID number. Please try again.");
+      }
+
+      // Get user's email using the profile ID
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user?.email) {
+        throw new Error("Could not find user email");
       }
 
       const { error: updateError } = await supabase.auth.updateUser({
@@ -179,7 +217,7 @@ export default function Auth() {
       toast({
         variant: "destructive",
         title: "Error resetting password",
-        description: error.message,
+        description: error.message || "Failed to reset password. Please try again.",
       });
     } finally {
       setIsLoading(false);
