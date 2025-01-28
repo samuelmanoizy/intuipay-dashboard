@@ -9,6 +9,7 @@ import ContentDetail from "./pages/ContentDetail";
 import Content from "./pages/Content";
 import Analytics from "./pages/Analytics";
 import Transactions from "./pages/Transactions";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/content" element={<Content />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/auth" element={<Auth />} />
           </Routes>
         </DashboardLayout>
       </BrowserRouter>
