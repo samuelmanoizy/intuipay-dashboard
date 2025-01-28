@@ -66,14 +66,24 @@ export default function ContentDetail() {
   const handleComment = async () => {
     if (!comment.trim()) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to comment",
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("comments")
-      .insert([
-        {
-          content_id: id,
-          message: comment,
-        },
-      ]);
+      .insert({
+        content_id: id!,
+        message: comment,
+        user_id: user.id
+      });
 
     if (error) {
       toast({
