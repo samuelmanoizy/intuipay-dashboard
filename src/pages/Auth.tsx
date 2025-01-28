@@ -17,6 +17,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Define interface for profile data
+interface Profile {
+  id: string;
+  email: string;
+  username: string;
+  secret_id_number: string;
+}
+
 const signUpSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z
@@ -94,13 +102,17 @@ export default function Auth() {
       setIsLoading(true);
       
       // First check if email already exists
-      const { data: existingUsers } = await supabase
+      const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
         .select('email')
         .eq('email', values.email)
         .single();
 
-      if (existingUsers) {
+      if (existingUserError && existingUserError.code !== 'PGRST116') {
+        throw existingUserError;
+      }
+
+      if (existingUser) {
         toast({
           variant: "destructive",
           title: "Error creating account",
@@ -187,7 +199,7 @@ export default function Auth() {
       // First verify username and secret ID match
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select()
+        .select<"profiles", Profile>()
         .eq("username", values.username)
         .eq("secret_id_number", values.secretIdNumber)
         .single();
