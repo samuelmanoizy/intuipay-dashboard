@@ -122,7 +122,7 @@ export default function Auth() {
         return;
       }
 
-      // Sign up the user
+      // Sign up the user with metadata
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
