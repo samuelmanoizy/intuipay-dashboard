@@ -42,12 +42,12 @@ serve(async (req) => {
       )
     }
 
-    // Prepare the transaction payload
+    // Prepare the transaction payload following IntaSend's format
     const payload = {
       currency: 'KES',
       transactions: [{
         name: 'Customer Withdrawal',
-        account: phoneNumber,
+        account: phoneNumber.replace(/\D/g, ''), // Remove any non-digit characters
         amount: parseFloat(amount)
       }],
       requires_approval: 'NO'
@@ -56,8 +56,8 @@ serve(async (req) => {
     console.log('Preparing IntaSend request:', payload)
 
     try {
-      // Make request to IntaSend API using live endpoint
-      const response = await fetch('https://payment.intasend.com/api/v1/payment/transfer/mpesa', {
+      // Make request to IntaSend API using the correct endpoint
+      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/mpesa-b2c', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
