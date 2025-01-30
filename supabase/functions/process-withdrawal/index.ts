@@ -4,7 +4,8 @@ import { IntaSend } from 'npm:intasend-node'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
@@ -43,7 +44,7 @@ serve(async (req) => {
       test: false
     })
 
-    console.log('Creating B2C payout request...')
+    console.log('Creating payout request...')
     const payouts = intasend.payouts()
     
     const payoutData = {
@@ -57,41 +58,20 @@ serve(async (req) => {
       }]
     }
     
-    console.log('Sending B2C payout request with data:', payoutData)
+    console.log('Sending payout request with data:', payoutData)
     const payoutResponse = await payouts.mpesa(payoutData)
-    console.log('Initial payout response:', payoutResponse)
+    console.log('Payout response:', payoutResponse)
 
-    // Automatically approve the transaction
-    if (payoutResponse && payoutResponse.id) {
-      console.log('Approving transaction...')
-      const approvalResponse = await payouts.approve(payoutResponse.id)
-      console.log('Approval response:', approvalResponse)
-
-      // Check transaction status
-      const statusResponse = await payouts.status(payoutResponse.tracking_id)
-      console.log('Status response:', statusResponse)
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            payout: payoutResponse,
-            approval: approvalResponse,
-            status: statusResponse
-          }
-        }),
-        { 
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          status: 200 
-        }
-      )
-    }
-
-    throw new Error('Failed to initiate payout')
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: payoutResponse
+      }),
+      { 
+        headers: corsHeaders,
+        status: 200 
+      }
+    )
 
   } catch (error) {
     console.error('Error processing withdrawal:', error)
@@ -102,10 +82,7 @@ serve(async (req) => {
         details: error.message
       }),
       { 
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
+        headers: corsHeaders,
         status: 500 
       }
     )
