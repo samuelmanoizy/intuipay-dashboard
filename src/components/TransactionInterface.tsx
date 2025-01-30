@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ export function TransactionInterface() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [amount, setAmount] = useState("10");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,7 +29,6 @@ export function TransactionInterface() {
           title: "Transaction Successful",
           description: "Your transaction has been processed successfully.",
         });
-        // In a real app, you'd update the balance from your backend
         const transactionAmount = parseFloat(amount);
         setBalance((prev) => prev + transactionAmount);
         setTransactions((prev) => [...prev, { 
@@ -57,6 +58,42 @@ export function TransactionInterface() {
     }
   };
 
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhoneNumber(e.target.value);
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      const response = await supabase.functions.invoke('process-withdrawal', {
+        body: { amount, phoneNumber }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const transactionAmount = parseFloat(amount);
+      setBalance((prev) => prev - transactionAmount);
+      setTransactions((prev) => [...prev, { 
+        type: "withdrawal", 
+        amount: transactionAmount, 
+        date: new Date() 
+      }]);
+
+      toast({
+        title: "Withdrawal Initiated",
+        description: "Your withdrawal request has been processed.",
+      });
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      toast({
+        title: "Withdrawal Failed",
+        description: error.message || "There was an error processing your withdrawal.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -80,6 +117,19 @@ export function TransactionInterface() {
       </Card>
 
       <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Phone Number</h2>
+        <div className="flex gap-4 items-center">
+          <Input
+            type="tel"
+            value={phoneNumber}
+            onChange={handlePhoneNumberChange}
+            className="max-w-[200px]"
+            placeholder="Enter phone number"
+          />
+        </div>
+      </Card>
+
+      <Card className="p-6">
         <h2 className="text-2xl font-bold mb-4">Actions</h2>
         <div className="flex gap-4">
           <button
@@ -93,18 +143,12 @@ export function TransactionInterface() {
           >
             DEPOSIT
           </button>
-          <button
-            className="intaSendPayButton"
-            data-amount={amount}
-            data-currency="KES"
-            data-email="joe@doe.com"
-            data-first_name="JOE"
-            data-last_name="DOE"
-            data-country="KE"
-            data-method="withdraw"
+          <Button
+            onClick={handleWithdraw}
+            disabled={!phoneNumber || !amount || parseFloat(amount) <= 0}
           >
             WITHDRAW
-          </button>
+          </Button>
         </div>
       </Card>
 
