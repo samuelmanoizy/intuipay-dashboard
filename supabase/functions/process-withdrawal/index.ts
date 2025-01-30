@@ -45,17 +45,21 @@ serve(async (req) => {
     
     // Prepare the transaction payload for B2C transfer
     const payload = {
+      transfer_type: "mobile_money",
       currency: "KES",
-      value: parseFloat(amount),
-      phone_number: cleanPhoneNumber,
-      provider: "M-PESA"
+      transactions: [{
+        account_name: "Customer",
+        account_number: cleanPhoneNumber,
+        amount: parseFloat(amount),
+        provider: "M-PESA"
+      }]
     }
 
     console.log('Preparing IntaSend B2C request:', payload)
 
     try {
       // Make request to IntaSend B2C API endpoint using the live API
-      const response = await fetch('https://sandbox.intasend.com/api/v1/send-money/mobile-money/', {
+      const response = await fetch('https://payment.intasend.com/api/v1/payment/b2c/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
