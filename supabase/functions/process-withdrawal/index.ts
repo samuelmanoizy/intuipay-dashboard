@@ -62,10 +62,7 @@ serve(async (req) => {
         data: payoutResponse
       }),
       { 
-        headers: {
-          ...corsHeaders,
-          'Cache-Control': 'no-store'
-        },
+        headers: corsHeaders,
         status: 200 
       }
     )
@@ -80,10 +77,7 @@ serve(async (req) => {
         stack: error.stack
       }),
       { 
-        headers: {
-          ...corsHeaders,
-          'Cache-Control': 'no-store'
-        },
+        headers: corsHeaders,
         status: 500 
       }
     )
