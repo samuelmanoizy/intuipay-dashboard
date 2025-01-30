@@ -62,13 +62,20 @@ serve(async (req) => {
     const payoutResponse = await payouts.mpesa(payoutData)
     console.log('Payout response:', payoutResponse)
 
+    // Approve the transaction automatically
+    const approvalResponse = await payouts.approve(payoutResponse)
+    console.log('Approval response:', approvalResponse)
+
     return new Response(
       JSON.stringify({
         success: true,
-        data: payoutResponse
+        data: approvalResponse
       }),
       { 
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
         status: 200 
       }
     )
@@ -82,7 +89,10 @@ serve(async (req) => {
         details: error.message
       }),
       { 
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
         status: 500 
       }
     )
