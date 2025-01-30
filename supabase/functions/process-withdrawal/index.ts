@@ -28,15 +28,15 @@ serve(async (req) => {
     }
 
     // IntaSend API configuration
-    const publicKey = Deno.env.get('INTASEND_API_KEY')
+    const publicKey = 'ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4'
     const secretKey = Deno.env.get('INTASEND_SECRET_KEY')
 
-    if (!publicKey || !secretKey) {
-      console.error('IntaSend API keys not configured')
+    if (!secretKey) {
+      console.error('IntaSend secret key not configured')
       return new Response(
         JSON.stringify({ 
           error: 'Payment provider configuration error',
-          details: 'API keys missing'
+          details: 'Secret key missing'
         }),
         { headers: corsHeaders, status: 500 }
       )
@@ -47,19 +47,19 @@ serve(async (req) => {
       currency: 'KES',
       transactions: [{
         account: phoneNumber,
-        amount: parseFloat(amount).toFixed(2), // Ensure proper number format
-        method: "M-PESA" // Specify the payment method
+        amount: parseFloat(amount).toFixed(2),
+        method: "M-PESA"
       }],
-      callback_url: "", // Optional callback URL
-      notification_email: "", // Optional notification email
+      callback_url: "",
+      notification_email: "",
       requires_approval: "NO"
     }
 
     console.log('Preparing IntaSend request:', payload)
 
     try {
-      // Make request to IntaSend API
-      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer', {
+      // Make request to IntaSend API using live endpoint
+      const response = await fetch('https://payment.intasend.com/api/v1/payment/transfer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             error: 'Invalid response from payment provider',
-            details: responseText.substring(0, 100) // Log first 100 chars of response
+            details: responseText.substring(0, 100)
           }),
           { headers: corsHeaders, status: 500 }
         )
