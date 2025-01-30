@@ -43,37 +43,51 @@ serve(async (req) => {
     }
 
     // Prepare the transaction payload
-    const transactions = [{
-      account: phoneNumber,
-      amount: amount.toString()
-    }]
-
-    console.log('Preparing IntaSend request:', {
+    const payload = {
       currency: 'KES',
-      transactions,
-      requires_approval: 'NO'
-    })
+      transactions: [{
+        account: phoneNumber,
+        amount: parseFloat(amount).toFixed(2), // Ensure proper number format
+        method: "M-PESA" // Specify the payment method
+      }],
+      callback_url: "", // Optional callback URL
+      notification_email: "", // Optional notification email
+      requires_approval: "NO"
+    }
+
+    console.log('Preparing IntaSend request:', payload)
 
     try {
-      // Make request to IntaSend API - using production endpoint
-      const response = await fetch('https://payment.intasend.com/api/v1/payment/transfer', {
+      // Make request to IntaSend API
+      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${secretKey}`,
           'X-IntaSend-Public-API-Key': publicKey
         },
-        body: JSON.stringify({
-          currency: 'KES',
-          transactions,
-          requires_approval: 'NO'
-        })
+        body: JSON.stringify(payload)
       })
 
-      const data = await response.json()
-      console.log('IntaSend API Response:', data)
+      const responseText = await response.text()
+      console.log('IntaSend API Raw Response:', responseText)
+
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Failed to parse IntaSend response:', parseError)
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid response from payment provider',
+            details: responseText.substring(0, 100) // Log first 100 chars of response
+          }),
+          { headers: corsHeaders, status: 500 }
+        )
+      }
 
       if (!response.ok) {
+        console.error('IntaSend API Error Response:', data)
         return new Response(
           JSON.stringify({ 
             error: data.message || 'Payment processing failed',
@@ -83,6 +97,7 @@ serve(async (req) => {
         )
       }
 
+      console.log('IntaSend API Success Response:', data)
       return new Response(
         JSON.stringify({
           success: true,
@@ -90,6 +105,7 @@ serve(async (req) => {
         }),
         { headers: corsHeaders }
       )
+
     } catch (fetchError) {
       console.error('IntaSend API request failed:', fetchError)
       return new Response(
