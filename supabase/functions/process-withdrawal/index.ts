@@ -58,8 +58,8 @@ serve(async (req) => {
     console.log('Preparing IntaSend B2C request:', payload)
 
     try {
-      // Make request to IntaSend B2C API endpoint
-      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/b2c/', {
+      // Make request to IntaSend B2C API endpoint using the live API
+      const response = await fetch('https://payment.intasend.com/api/v1/payment/b2c/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
