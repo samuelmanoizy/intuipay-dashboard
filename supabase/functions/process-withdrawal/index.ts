@@ -4,7 +4,7 @@ import { IntaSend } from 'npm:intasend-node'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
 }
 
@@ -61,7 +61,10 @@ serve(async (req) => {
         data: payoutResponse
       }),
       { 
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'no-cache'
+        },
         status: 200 
       }
     )
@@ -76,7 +79,10 @@ serve(async (req) => {
         stack: error.stack
       }),
       { 
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'no-cache'
+        },
         status: 500 
       }
     )
