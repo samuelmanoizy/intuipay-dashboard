@@ -43,10 +43,8 @@ serve(async (req) => {
     // Clean phone number to ensure only digits
     const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
     
-    // Prepare the transaction payload following IntaSend's format
+    // Prepare the transaction payload
     const payload = {
-      api_key: publicKey,
-      api_secret: secretKey,
       currency: 'KES',
       method: 'M-PESA',
       customer_id: cleanPhoneNumber,
@@ -54,10 +52,7 @@ serve(async (req) => {
       account_no: cleanPhoneNumber
     }
 
-    console.log('Preparing IntaSend request:', {
-      ...payload,
-      api_secret: '[REDACTED]'
-    })
+    console.log('Preparing IntaSend request:', payload)
 
     try {
       // Make request to IntaSend API using their direct transfer endpoint
@@ -65,7 +60,9 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${secretKey}`,
+          'X-API-KEY': publicKey
         },
         body: JSON.stringify(payload)
       })
