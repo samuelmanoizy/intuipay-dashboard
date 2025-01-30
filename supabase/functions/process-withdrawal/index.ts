@@ -14,11 +14,15 @@ serve(async (req) => {
 
   try {
     const { amount, phoneNumber } = await req.json()
+    console.log('Received withdrawal request:', { amount, phoneNumber })
 
     // Validate input
     if (!amount || !phoneNumber) {
       return new Response(
-        JSON.stringify({ error: 'Amount and phone number are required' }),
+        JSON.stringify({ 
+          error: 'Amount and phone number are required',
+          details: { amount, phoneNumber }
+        }),
         { headers: corsHeaders, status: 400 }
       )
     }
@@ -30,7 +34,10 @@ serve(async (req) => {
     if (!publicKey || !secretKey) {
       console.error('IntaSend API keys not configured')
       return new Response(
-        JSON.stringify({ error: 'Payment provider configuration error' }),
+        JSON.stringify({ 
+          error: 'Payment provider configuration error',
+          details: 'API keys missing'
+        }),
         { headers: corsHeaders, status: 500 }
       )
     }
@@ -40,6 +47,12 @@ serve(async (req) => {
       account: phoneNumber,
       amount: amount.toString()
     }]
+
+    console.log('Preparing IntaSend request:', {
+      currency: 'KES',
+      transactions,
+      requires_approval: 'NO'
+    })
 
     // Make request to IntaSend API
     const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer', {
@@ -60,18 +73,30 @@ serve(async (req) => {
     console.log('IntaSend API Response:', data)
 
     if (!response.ok) {
-      throw new Error(data.message || 'Payment processing failed')
+      return new Response(
+        JSON.stringify({ 
+          error: data.message || 'Payment processing failed',
+          details: data
+        }),
+        { headers: corsHeaders, status: response.status }
+      )
     }
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({
+        success: true,
+        data: data
+      }),
       { headers: corsHeaders }
     )
 
   } catch (error) {
     console.error('Withdrawal processing error:', error)
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message
+      }),
       { headers: corsHeaders, status: 500 }
     )
   }
