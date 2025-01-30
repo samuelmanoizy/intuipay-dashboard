@@ -68,7 +68,10 @@ serve(async (req) => {
         data: payoutResponse
       }),
       { 
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'no-cache'
+        },
         status: 200 
       }
     )
@@ -79,8 +82,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: 'Failed to process withdrawal',
-        details: error.message,
-        stack: error.stack
+        details: error.message
       }),
       { 
         headers: corsHeaders,
