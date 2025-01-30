@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
@@ -27,7 +26,6 @@ serve(async (req) => {
       )
     }
 
-    // IntaSend API configuration
     const publicKey = 'ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4'
     const secretKey = Deno.env.get('INTASEND_SECRET_KEY')
 
@@ -42,27 +40,32 @@ serve(async (req) => {
       )
     }
 
+    // Clean phone number to ensure only digits
+    const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
+    
     // Prepare the transaction payload following IntaSend's format
     const payload = {
+      api_key: publicKey,
+      api_secret: secretKey,
       currency: 'KES',
-      transactions: [{
-        name: 'Customer Withdrawal',
-        account: phoneNumber.replace(/\D/g, ''), // Remove any non-digit characters
-        amount: parseFloat(amount)
-      }],
-      requires_approval: 'NO'
+      method: 'M-PESA',
+      customer_id: cleanPhoneNumber,
+      value: parseFloat(amount),
+      account_no: cleanPhoneNumber
     }
 
-    console.log('Preparing IntaSend request:', payload)
+    console.log('Preparing IntaSend request:', {
+      ...payload,
+      api_secret: '[REDACTED]'
+    })
 
     try {
-      // Make request to IntaSend API using the correct endpoint
-      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/mpesa-b2c', {
+      // Make request to IntaSend API using their direct transfer endpoint
+      const response = await fetch('https://sandbox.intasend.com/api/v1/send-money/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${secretKey}`,
-          'X-IntaSend-Public-API-Key': publicKey
+          'Accept': 'application/json'
         },
         body: JSON.stringify(payload)
       })
