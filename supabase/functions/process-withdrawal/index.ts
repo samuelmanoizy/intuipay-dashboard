@@ -54,41 +54,52 @@ serve(async (req) => {
       requires_approval: 'NO'
     })
 
-    // Make request to IntaSend API
-    const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${secretKey}`,
-        'X-IntaSend-Public-API-Key': publicKey
-      },
-      body: JSON.stringify({
-        currency: 'KES',
-        transactions,
-        requires_approval: 'NO'
+    try {
+      // Make request to IntaSend API
+      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${secretKey}`,
+          'X-IntaSend-Public-API-Key': publicKey
+        },
+        body: JSON.stringify({
+          currency: 'KES',
+          transactions,
+          requires_approval: 'NO'
+        })
       })
-    })
 
-    const data = await response.json()
-    console.log('IntaSend API Response:', data)
+      const data = await response.json()
+      console.log('IntaSend API Response:', data)
 
-    if (!response.ok) {
+      if (!response.ok) {
+        return new Response(
+          JSON.stringify({ 
+            error: data.message || 'Payment processing failed',
+            details: data
+          }),
+          { headers: corsHeaders, status: response.status }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: data
+        }),
+        { headers: corsHeaders }
+      )
+    } catch (fetchError) {
+      console.error('IntaSend API request failed:', fetchError)
       return new Response(
         JSON.stringify({ 
-          error: data.message || 'Payment processing failed',
-          details: data
+          error: 'Failed to communicate with payment provider',
+          details: fetchError.message
         }),
-        { headers: corsHeaders, status: response.status }
+        { headers: corsHeaders, status: 500 }
       )
     }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: data
-      }),
-      { headers: corsHeaders }
-    )
 
   } catch (error) {
     console.error('Withdrawal processing error:', error)
