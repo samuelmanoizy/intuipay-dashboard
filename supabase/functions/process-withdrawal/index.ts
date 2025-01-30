@@ -55,8 +55,8 @@ serve(async (req) => {
     })
 
     try {
-      // Make request to IntaSend API
-      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer', {
+      // Make request to IntaSend API - using production endpoint
+      const response = await fetch('https://payment.intasend.com/api/v1/payment/transfer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
