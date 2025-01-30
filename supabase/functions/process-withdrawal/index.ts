@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { IntaSend } from 'npm:intasend-node'
 
 const corsHeaders = {
@@ -21,21 +20,30 @@ serve(async (req) => {
       throw new Error('Amount and phone number are required')
     }
 
-    // Initialize IntaSend client
+    // Clean phone number to ensure only digits
+    const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
+    
+    console.log('Initializing IntaSend client...')
     const intasend = new IntaSend({
       token: Deno.env.get("INTASEND_API_KEY"),
       publishableKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
-      test: false, // Set to false for live mode
+      test: false, // Live mode
     })
 
-    // Clean phone number to ensure only digits
-    const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
-
-    console.log('Initiating payout with IntaSend Node SDK')
-    
+    console.log('Creating payout request...')
     const payouts = intasend.payouts()
     
-    // First create the payout request
+    console.log('Sending payout request with data:', {
+      currency: 'KES',
+      requires_approval: 'NO',
+      transactions: [{
+        name: 'Customer',
+        account: cleanPhoneNumber,
+        amount: amount.toString(),
+        narrative: 'Wallet withdrawal'
+      }]
+    })
+
     const payoutResponse = await payouts.mpesa({
       currency: 'KES',
       requires_approval: 'NO', // Auto-approve transactions
@@ -49,16 +57,18 @@ serve(async (req) => {
 
     console.log('Payout response:', payoutResponse)
 
-    // Return success response
     return new Response(
       JSON.stringify({
         success: true,
         data: payoutResponse
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200 
+      }
     )
 
   } catch (error) {
@@ -69,10 +79,13 @@ serve(async (req) => {
         error: 'Failed to process withdrawal',
         details: error.message
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 500 
+      }
     )
   }
 })
