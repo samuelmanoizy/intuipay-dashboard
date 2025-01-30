@@ -4,7 +4,7 @@ import { IntaSend } from 'npm:intasend-node'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Content-Type': 'application/json'
 }
 
@@ -33,8 +33,8 @@ serve(async (req) => {
     console.log('Initializing IntaSend client...')
     const intasend = new IntaSend({
       token: Deno.env.get("INTASEND_API_KEY"),
-      publishableKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
-      test: false // Live mode
+      publishableKey: Deno.env.get("INTASEND_SECRET_KEY"),
+      test: false
     })
 
     console.log('Creating payout request...')
@@ -46,13 +46,12 @@ serve(async (req) => {
       transactions: [{
         name: 'Customer',
         account: cleanPhoneNumber,
-        amount: amount.toString(),
+        amount: parseFloat(amount).toFixed(2),
         narrative: 'Wallet withdrawal'
       }]
     }
     
     console.log('Sending payout request with data:', payoutData)
-
     const payoutResponse = await payouts.mpesa(payoutData)
     console.log('Payout response:', payoutResponse)
 
