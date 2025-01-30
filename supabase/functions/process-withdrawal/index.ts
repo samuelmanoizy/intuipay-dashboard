@@ -43,23 +43,19 @@ serve(async (req) => {
     // Clean phone number to ensure only digits
     const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
     
-    // Prepare the transaction payload for B2C transfer
+    // Prepare the transaction payload for mobile money transfer
     const payload = {
-      transfer_type: "mobile_money",
       currency: "KES",
-      transactions: [{
-        account_name: "Customer",
-        account_number: cleanPhoneNumber,
-        amount: parseFloat(amount),
-        provider: "M-PESA"
-      }]
+      value: parseFloat(amount),
+      phone_number: cleanPhoneNumber,
+      provider: "M-PESA"
     }
 
-    console.log('Preparing IntaSend B2C request:', payload)
+    console.log('Preparing IntaSend mobile money request:', payload)
 
     try {
-      // Make request to IntaSend B2C API endpoint using the live API
-      const response = await fetch('https://payment.intasend.com/api/v1/payment/b2c/', {
+      // Make request to IntaSend mobile money API endpoint
+      const response = await fetch('https://payment.intasend.com/api/v1/send-money/mobile-money/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
