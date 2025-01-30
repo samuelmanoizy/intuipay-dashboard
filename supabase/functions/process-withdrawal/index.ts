@@ -44,27 +44,26 @@ serve(async (req) => {
 
     // Prepare the transaction payload
     const payload = {
-      currency: 'KES',
+      transfer_type: "mobile_money",
+      currency: "KES",
       transactions: [{
-        account: phoneNumber,
-        amount: parseFloat(amount).toFixed(2),
-        method: "M-PESA"
-      }],
-      callback_url: "",
-      notification_email: "",
-      requires_approval: "NO"
+        name: "Customer Withdrawal",
+        phone_number: phoneNumber,
+        amount: parseFloat(amount),
+        provider: "mpesa"
+      }]
     }
 
     console.log('Preparing IntaSend request:', payload)
 
     try {
-      // Make request to IntaSend API using live endpoint
-      const response = await fetch('https://payment.intasend.com/api/v1/payment/transfer', {
+      // Make request to IntaSend API
+      const response = await fetch('https://sandbox.intasend.com/api/v1/send-money/initiate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${secretKey}`,
-          'X-IntaSend-Public-API-Key': publicKey
+          'X-API-KEY': publicKey
         },
         body: JSON.stringify(payload)
       })
