@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { IntaSend } from 'npm:intasend-node'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,115 +15,64 @@ serve(async (req) => {
 
   try {
     const { amount, phoneNumber } = await req.json()
-    console.log('Received withdrawal request:', { amount, phoneNumber })
 
     // Validate input
     if (!amount || !phoneNumber) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Amount and phone number are required',
-          details: { amount, phoneNumber }
-        }),
-        { headers: corsHeaders, status: 400 }
-      )
+      throw new Error('Amount and phone number are required')
     }
 
-    const publicKey = 'ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4'
-    const secretKey = Deno.env.get('INTASEND_SECRET_KEY')
-
-    if (!secretKey) {
-      console.error('IntaSend secret key not configured')
-      return new Response(
-        JSON.stringify({ 
-          error: 'Payment provider configuration error',
-          details: 'Secret key missing'
-        }),
-        { headers: corsHeaders, status: 500 }
-      )
-    }
+    // Initialize IntaSend client
+    const intasend = new IntaSend({
+      token: Deno.env.get("INTASEND_API_KEY"),
+      publishableKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
+      test: false, // Set to false for live mode
+    })
 
     // Clean phone number to ensure only digits
     const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
+
+    console.log('Initiating payout with IntaSend Node SDK')
     
-    // Prepare the transaction payload for mobile money transfer
-    const payload = {
-      currency: "KES",
-      value: parseFloat(amount),
-      phone_number: cleanPhoneNumber,
-      provider: "M-PESA"
-    }
+    const payouts = intasend.payouts()
+    
+    // First create the payout request
+    const payoutResponse = await payouts.mpesa({
+      currency: 'KES',
+      requires_approval: 'NO', // Auto-approve transactions
+      transactions: [{
+        name: 'Customer',
+        account: cleanPhoneNumber,
+        amount: amount.toString(),
+        narrative: 'Wallet withdrawal'
+      }]
+    })
 
-    console.log('Preparing IntaSend mobile money request:', payload)
+    console.log('Payout response:', payoutResponse)
 
-    try {
-      // Make request to IntaSend mobile money API endpoint
-      const response = await fetch('https://payment.intasend.com/api/v1/send-money/mobile-money/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${secretKey}`,
-          'X-API-KEY': publicKey
-        },
-        body: JSON.stringify(payload)
-      })
-
-      const responseText = await response.text()
-      console.log('IntaSend API Raw Response:', responseText)
-
-      let data
-      try {
-        data = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error('Failed to parse IntaSend response:', parseError)
-        return new Response(
-          JSON.stringify({
-            error: 'Invalid response from payment provider',
-            details: responseText.substring(0, 100)
-          }),
-          { headers: corsHeaders, status: 500 }
-        )
-      }
-
-      if (!response.ok) {
-        console.error('IntaSend API Error Response:', data)
-        return new Response(
-          JSON.stringify({ 
-            error: data.message || 'Payment processing failed',
-            details: data
-          }),
-          { headers: corsHeaders, status: response.status }
-        )
-      }
-
-      console.log('IntaSend API Success Response:', data)
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: data
-        }),
-        { headers: corsHeaders }
-      )
-
-    } catch (fetchError) {
-      console.error('IntaSend API request failed:', fetchError)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to communicate with payment provider',
-          details: fetchError.message
-        }),
-        { headers: corsHeaders, status: 500 }
-      )
-    }
+    // Return success response
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: payoutResponse
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
 
   } catch (error) {
-    console.error('Withdrawal processing error:', error)
+    console.error('Error processing withdrawal:', error)
+    
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
+      JSON.stringify({
+        error: 'Failed to process withdrawal',
         details: error.message
       }),
-      { headers: corsHeaders, status: 500 }
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      },
     )
   }
 })
