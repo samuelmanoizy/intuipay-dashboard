@@ -5,8 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
-  'Cache-Control': 'no-store'
+  'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
@@ -31,10 +30,17 @@ serve(async (req) => {
     // Clean phone number to ensure only digits
     const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
     
+    const apiKey = Deno.env.get("INTASEND_API_KEY")
+    const secretKey = Deno.env.get("INTASEND_SECRET_KEY")
+    
+    if (!apiKey || !secretKey) {
+      throw new Error('IntaSend configuration is missing')
+    }
+
     console.log('Initializing IntaSend client...')
     const intasend = new IntaSend({
-      token: Deno.env.get("INTASEND_API_KEY"),
-      publishableKey: Deno.env.get("INTASEND_SECRET_KEY"),
+      token: apiKey,
+      publishableKey: secretKey,
       test: false
     })
 
