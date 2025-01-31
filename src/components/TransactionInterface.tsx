@@ -49,42 +49,35 @@ export function TransactionInterface() {
       });
     });
 
-    // Initialize withdrawal functionality
-    const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
-    if (withdrawalButton) {
-      withdrawalButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        intaSend.withdraw().on("COMPLETE", (results: any) => {
-          console.log("Withdrawal successful", results);
-          const transactionAmount = parseFloat(amount);
-          setBalance((prev) => prev - transactionAmount);
-          setTransactions((prev) => [...prev, { 
-            type: "withdrawal", 
-            amount: transactionAmount, 
-            date: new Date() 
-          }]);
-          toast({
-            title: "Withdrawal Successful",
-            description: "Your withdrawal has been processed successfully.",
-          });
-        })
-        .on("FAILED", (error: any) => {
-          console.error("Withdrawal failed:", error);
-          toast({
-            title: "Withdrawal Failed",
-            description: "There was an error processing your withdrawal.",
-            variant: "destructive",
-          });
-        });
+    // Handle withdrawal events using IntaSend's built-in events
+    document.addEventListener('intasend:withdraw:complete', (event: any) => {
+      console.log("Withdrawal successful", event.detail);
+      const transactionAmount = parseFloat(amount);
+      setBalance((prev) => prev - transactionAmount);
+      setTransactions((prev) => [...prev, { 
+        type: "withdrawal", 
+        amount: transactionAmount, 
+        date: new Date() 
+      }]);
+      toast({
+        title: "Withdrawal Successful",
+        description: "Your withdrawal has been processed successfully.",
       });
-    }
+    });
+
+    document.addEventListener('intasend:withdraw:failed', (event: any) => {
+      console.error("Withdrawal failed:", event.detail);
+      toast({
+        title: "Withdrawal Failed",
+        description: "There was an error processing your withdrawal.",
+        variant: "destructive",
+      });
+    });
 
     return () => {
-      // Cleanup if needed
-      const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
-      if (withdrawalButton) {
-        withdrawalButton.removeEventListener('click', () => {});
-      }
+      // Cleanup event listeners
+      document.removeEventListener('intasend:withdraw:complete', () => {});
+      document.removeEventListener('intasend:withdraw:failed', () => {});
     };
   }, [amount, toast]);
 
