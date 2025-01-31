@@ -15,21 +15,18 @@ serve(async (req) => {
     const { phoneNumber, amount } = await req.json()
     console.log('Processing withdrawal:', { phoneNumber, amount })
 
-    const transactions = [{
-      account: phoneNumber,
-      amount: amount.toString()
-    }]
-
-    // First create the transfer using live API
-    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/send-money/initiate/', {
+    // First create the transfer using Mobile Money API
+    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/payment/mobile-money/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
       },
       body: JSON.stringify({
+        phone_number: phoneNumber,
+        amount: amount,
         currency: "KES",
-        transactions: transactions
+        provider: "mpesa"
       })
     })
 
@@ -42,12 +39,12 @@ serve(async (req) => {
     const createData = await createResponse.json()
     console.log('Transfer created:', createData)
 
-    if (!createData.invoice.id) {
-      throw new Error('No invoice ID received from transfer creation')
+    if (!createData.id) {
+      throw new Error('No transfer ID received from transfer creation')
     }
 
-    // Then approve the transfer using live API
-    const approveResponse = await fetch(`https://sandbox.intasend.com/api/v1/send-money/${createData.invoice.id}/process/`, {
+    // Then process the transfer
+    const processResponse = await fetch(`https://sandbox.intasend.com/api/v1/payment/${createData.id}/process`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,16 +52,16 @@ serve(async (req) => {
       }
     })
 
-    if (!approveResponse.ok) {
-      const errorData = await approveResponse.text()
-      console.error('Transfer approval failed:', errorData)
-      throw new Error(`Transfer approval failed: ${errorData}`)
+    if (!processResponse.ok) {
+      const errorData = await processResponse.text()
+      console.error('Transfer processing failed:', errorData)
+      throw new Error(`Transfer processing failed: ${errorData}`)
     }
 
-    const approveData = await approveResponse.json()
-    console.log('Transfer approved:', approveData)
+    const processData = await processResponse.json()
+    console.log('Transfer processed:', processData)
 
-    return new Response(JSON.stringify(approveData), {
+    return new Response(JSON.stringify(processData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
