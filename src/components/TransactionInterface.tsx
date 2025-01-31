@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { BalanceCard } from "./transaction/BalanceCard";
+import { AmountInput } from "./transaction/AmountInput";
+import { PhoneInput } from "./transaction/PhoneInput";
+import { TransactionHistory } from "./transaction/TransactionHistory";
 
 declare global {
   interface Window {
@@ -19,7 +21,7 @@ export function TransactionInterface() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initialize IntaSend for deposits and withdrawals
+    // Initialize IntaSend for deposits
     const intaSend = new window.IntaSend({
       publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
       live: true,
@@ -49,84 +51,57 @@ export function TransactionInterface() {
       });
     });
 
-    // Handle withdrawal events using IntaSend's built-in events
-    document.addEventListener('intasend:withdraw:complete', (event: any) => {
-      console.log("Withdrawal successful", event.detail);
-      const transactionAmount = parseFloat(amount);
-      setBalance((prev) => prev - transactionAmount);
-      setTransactions((prev) => [...prev, { 
-        type: "withdrawal", 
-        amount: transactionAmount, 
-        date: new Date() 
-      }]);
-      toast({
-        title: "Withdrawal Successful",
-        description: "Your withdrawal has been processed successfully.",
-      });
-    });
+    // Handle withdrawal button click
+    const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
+    if (withdrawalButton) {
+      withdrawalButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+            body: { phoneNumber, amount: parseFloat(amount) }
+          });
 
-    document.addEventListener('intasend:withdraw:failed', (event: any) => {
-      console.error("Withdrawal failed:", event.detail);
-      toast({
-        title: "Withdrawal Failed",
-        description: "There was an error processing your withdrawal.",
-        variant: "destructive",
+          if (error) throw error;
+
+          console.log("Withdrawal successful", data);
+          const transactionAmount = parseFloat(amount);
+          setBalance((prev) => prev - transactionAmount);
+          setTransactions((prev) => [...prev, { 
+            type: "withdrawal", 
+            amount: transactionAmount, 
+            date: new Date() 
+          }]);
+          
+          toast({
+            title: "Withdrawal Successful",
+            description: "Your withdrawal has been processed successfully.",
+          });
+        } catch (error) {
+          console.error("Withdrawal failed:", error);
+          toast({
+            title: "Withdrawal Failed",
+            description: "There was an error processing your withdrawal.",
+            variant: "destructive",
+          });
+        }
       });
-    });
+    }
 
     return () => {
-      // Cleanup event listeners
-      document.removeEventListener('intasend:withdraw:complete', () => {});
-      document.removeEventListener('intasend:withdraw:failed', () => {});
+      const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
+      if (withdrawalButton) {
+        withdrawalButton.removeEventListener('click', () => {});
+      }
     };
-  }, [amount, toast]);
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (!isNaN(Number(value)) && Number(value) >= 0) {
-      setAmount(value);
-    }
-  };
-
-  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhoneNumber(e.target.value);
-  };
+  }, [amount, phoneNumber, toast]);
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Current Balance</h2>
-        <p className="text-4xl font-bold text-[#2cc1ee]">KES {balance.toFixed(2)}</p>
-      </Card>
-
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Transaction Amount</h2>
-        <div className="flex gap-4 items-center">
-          <Input
-            type="number"
-            min="0"
-            value={amount}
-            onChange={handleAmountChange}
-            className="max-w-[200px]"
-            placeholder="Enter amount"
-          />
-          <span className="text-sm text-gray-500">KES</span>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Phone Number</h2>
-        <div className="flex gap-4 items-center">
-          <Input
-            type="tel"
-            value={phoneNumber}
-            onChange={handlePhoneNumberChange}
-            className="max-w-[200px]"
-            placeholder="Enter phone number"
-          />
-        </div>
-      </Card>
-
+      <BalanceCard balance={balance} />
+      <AmountInput amount={amount} onChange={setAmount} />
+      <PhoneInput phoneNumber={phoneNumber} onChange={setPhoneNumber} />
+      
       <Card className="p-6">
         <h2 className="text-2xl font-bold mb-4">Actions</h2>
         <div className="flex gap-4">
@@ -155,25 +130,7 @@ export function TransactionInterface() {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Transaction History</h2>
-        <div className="space-y-4">
-          {transactions.map((tx, index) => (
-            <div key={index} className="flex justify-between items-center border-b pb-2">
-              <div>
-                <p className="font-semibold capitalize">{tx.type}</p>
-                <p className="text-sm text-gray-500">
-                  {tx.date.toLocaleDateString()}
-                </p>
-              </div>
-              <p className="font-bold">KES {tx.amount.toFixed(2)}</p>
-            </div>
-          ))}
-          {transactions.length === 0 && (
-            <p className="text-gray-500">No transactions yet</p>
-          )}
-        </div>
-      </Card>
+      <TransactionHistory transactions={transactions} />
     </div>
   );
 }
