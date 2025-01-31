@@ -21,7 +21,7 @@ serve(async (req) => {
     }
 
     // Create the M-Pesa withdrawal request using the live API
-    const createResponse = await fetch('https://payment.intasend.com/api/v1/send-money/', {
+    const createResponse = await fetch('https://payment.intasend.com/api/v1/payment/mpesa-stk/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,14 +29,12 @@ serve(async (req) => {
         'X-IntaSend-Api-Version': '1',
       },
       body: JSON.stringify({
-        provider: "mpesa-till",
+        phone_number: phoneNumber,
+        amount: amount,
         currency: "KES",
-        transactions: [{
-          name: "Customer Withdrawal",
-          phone_number: phoneNumber,
-          amount: amount,
-          narrative: "Withdrawal via M-Pesa"
-        }]
+        narrative: "Withdrawal via M-Pesa",
+        api_ref: `withdrawal_${Date.now()}`,
+        is_withdrawal: true
       })
     })
 
@@ -44,39 +42,18 @@ serve(async (req) => {
     console.log('Raw create response:', responseText)
 
     if (!createResponse.ok) {
-      console.error('Transfer creation failed:', responseText)
-      throw new Error(`Transfer creation failed: ${responseText}`)
+      console.error('Payment creation failed:', responseText)
+      throw new Error(`Payment creation failed: ${responseText}`)
     }
 
     const createData = JSON.parse(responseText)
-    console.log('Transfer created:', createData)
+    console.log('Payment created:', createData)
 
-    if (!createData.id) {
-      throw new Error('No transfer ID received')
+    if (!createData.invoice?.id) {
+      throw new Error('No invoice ID received')
     }
 
-    // Process the M-Pesa withdrawal using the live API
-    const processResponse = await fetch(`https://payment.intasend.com/api/v1/send-money/${createData.id}/process/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${INTASEND_SECRET_KEY}`,
-        'X-IntaSend-Api-Version': '1',
-      }
-    })
-
-    const processResponseText = await processResponse.text()
-    console.log('Raw process response:', processResponseText)
-
-    if (!processResponse.ok) {
-      console.error('Transfer processing failed:', processResponseText)
-      throw new Error(`Transfer processing failed: ${processResponseText}`)
-    }
-
-    const processData = JSON.parse(processResponseText)
-    console.log('Transfer processed:', processData)
-
-    return new Response(JSON.stringify(processData), {
+    return new Response(JSON.stringify(createData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
