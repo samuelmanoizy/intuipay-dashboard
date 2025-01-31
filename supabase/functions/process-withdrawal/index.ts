@@ -20,8 +20,8 @@ serve(async (req) => {
       throw new Error('IntaSend secret key not configured')
     }
 
-    // Create the M-Pesa withdrawal request
-    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/send-money/', {
+    // Create the M-Pesa withdrawal request using the live API
+    const createResponse = await fetch('https://payment.intasend.com/api/v1/send-money/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,8 +55,8 @@ serve(async (req) => {
       throw new Error('No transfer ID received')
     }
 
-    // Process the M-Pesa withdrawal
-    const processResponse = await fetch(`https://sandbox.intasend.com/api/v1/send-money/${createData.id}/process/`, {
+    // Process the M-Pesa withdrawal using the live API
+    const processResponse = await fetch(`https://payment.intasend.com/api/v1/send-money/${createData.id}/process/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
