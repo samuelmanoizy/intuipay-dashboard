@@ -21,7 +21,7 @@ serve(async (req) => {
     }
 
     // Create the M-Pesa withdrawal request using the live API
-    const createResponse = await fetch('https://payment.intasend.com/api/v1/payment/mpesa-stk/', {
+    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/payment/mpesa-b2c/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,8 +33,7 @@ serve(async (req) => {
         amount: amount,
         currency: "KES",
         narrative: "Withdrawal via M-Pesa",
-        api_ref: `withdrawal_${Date.now()}`,
-        is_withdrawal: true
+        api_ref: `withdrawal_${Date.now()}`
       })
     })
 
