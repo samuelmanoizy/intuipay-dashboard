@@ -15,8 +15,8 @@ serve(async (req) => {
     const { phoneNumber, amount } = await req.json()
     console.log('Processing withdrawal:', { phoneNumber, amount })
 
-    // First create the transfer using Mobile Money API
-    const createResponse = await fetch('https://payment.intasend.com/api/v1/send-money/mpesa/send/', {
+    // Create the M-Pesa withdrawal request
+    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/send-money/mpesa/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,10 @@ serve(async (req) => {
       body: JSON.stringify({
         phone_number: phoneNumber,
         amount: amount,
-        currency: "KES"
+        currency: "KES",
+        is_public: false,
+        api_ref: Date.now().toString(),
+        comment: "Withdrawal via M-Pesa"
       })
     })
 
@@ -38,12 +41,12 @@ serve(async (req) => {
     const createData = await createResponse.json()
     console.log('Transfer created:', createData)
 
-    if (!createData.id) {
-      throw new Error('No transfer ID received from transfer creation')
+    if (!createData.invoice.id) {
+      throw new Error('No invoice ID received from transfer creation')
     }
 
-    // Then process the transfer
-    const processResponse = await fetch(`https://payment.intasend.com/api/v1/send-money/mpesa/${createData.id}/process/`, {
+    // Process the M-Pesa withdrawal
+    const processResponse = await fetch(`https://sandbox.intasend.com/api/v1/send-money/mpesa/${createData.invoice.id}/process/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
