@@ -15,12 +15,18 @@ serve(async (req) => {
     const { phoneNumber, amount } = await req.json()
     console.log('Processing withdrawal:', { phoneNumber, amount })
 
+    const INTASEND_SECRET_KEY = Deno.env.get('INTASEND_SECRET_KEY')
+    if (!INTASEND_SECRET_KEY) {
+      throw new Error('IntaSend secret key not configured')
+    }
+
     // Create the M-Pesa withdrawal request
     const createResponse = await fetch('https://sandbox.intasend.com/api/v1/send-money/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
+        'Authorization': `Bearer ${INTASEND_SECRET_KEY}`,
+        'X-IntaSend-Api-Version': '1',
       },
       body: JSON.stringify({
         provider: "mpesa-till",
@@ -34,13 +40,15 @@ serve(async (req) => {
       })
     })
 
+    const responseText = await createResponse.text()
+    console.log('Raw create response:', responseText)
+
     if (!createResponse.ok) {
-      const errorData = await createResponse.text()
-      console.error('Transfer creation failed:', errorData)
-      throw new Error(`Transfer creation failed: ${errorData}`)
+      console.error('Transfer creation failed:', responseText)
+      throw new Error(`Transfer creation failed: ${responseText}`)
     }
 
-    const createData = await createResponse.json()
+    const createData = JSON.parse(responseText)
     console.log('Transfer created:', createData)
 
     if (!createData.id) {
@@ -52,17 +60,20 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
+        'Authorization': `Bearer ${INTASEND_SECRET_KEY}`,
+        'X-IntaSend-Api-Version': '1',
       }
     })
 
+    const processResponseText = await processResponse.text()
+    console.log('Raw process response:', processResponseText)
+
     if (!processResponse.ok) {
-      const errorData = await processResponse.text()
-      console.error('Transfer processing failed:', errorData)
-      throw new Error(`Transfer processing failed: ${errorData}`)
+      console.error('Transfer processing failed:', processResponseText)
+      throw new Error(`Transfer processing failed: ${processResponseText}`)
     }
 
-    const processData = await processResponse.json()
+    const processData = JSON.parse(processResponseText)
     console.log('Transfer processed:', processData)
 
     return new Response(JSON.stringify(processData), {
