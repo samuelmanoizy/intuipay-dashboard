@@ -19,63 +19,72 @@ export function TransactionInterface() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initialize IntaSend for deposits
+    // Initialize IntaSend for deposits and withdrawals
     const intaSend = new window.IntaSend({
       publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
       live: true,
-    })
-      .on("COMPLETE", (results: any) => {
-        console.log("Transaction successful", results);
-        toast({
-          title: "Transaction Successful",
-          description: "Your transaction has been processed successfully.",
-        });
-        const transactionAmount = parseFloat(amount);
-        setBalance((prev) => prev + transactionAmount);
-        setTransactions((prev) => [...prev, { 
-          type: results.type || "deposit", 
-          amount: transactionAmount, 
-          date: new Date() 
-        }]);
-      })
-      .on("FAILED", (results: any) => {
-        console.log("Transaction failed", results);
-        toast({
-          title: "Transaction Failed",
-          description: "There was an error processing your transaction.",
-          variant: "destructive",
-        });
-      });
+    });
 
-    // Add event listeners for withdrawal button
-    document.addEventListener('intasend:withdraw:complete', (event: any) => {
-      console.log("Withdrawal successful", event.detail);
+    // Handle deposit events
+    intaSend.on("COMPLETE", (results: any) => {
+      console.log("Transaction successful", results);
+      toast({
+        title: "Transaction Successful",
+        description: "Your transaction has been processed successfully.",
+      });
       const transactionAmount = parseFloat(amount);
-      setBalance((prev) => prev - transactionAmount);
+      setBalance((prev) => prev + transactionAmount);
       setTransactions((prev) => [...prev, { 
-        type: "withdrawal", 
+        type: results.type || "deposit", 
         amount: transactionAmount, 
         date: new Date() 
       }]);
+    })
+    .on("FAILED", (results: any) => {
+      console.log("Transaction failed", results);
       toast({
-        title: "Withdrawal Successful",
-        description: "Your withdrawal has been processed successfully.",
-      });
-    });
-
-    document.addEventListener('intasend:withdraw:failed', (event: any) => {
-      console.error("Withdrawal failed:", event.detail);
-      toast({
-        title: "Withdrawal Failed",
-        description: "There was an error processing your withdrawal.",
+        title: "Transaction Failed",
+        description: "There was an error processing your transaction.",
         variant: "destructive",
       });
     });
 
+    // Initialize withdrawal functionality
+    const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
+    if (withdrawalButton) {
+      withdrawalButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        intaSend.withdraw().on("COMPLETE", (results: any) => {
+          console.log("Withdrawal successful", results);
+          const transactionAmount = parseFloat(amount);
+          setBalance((prev) => prev - transactionAmount);
+          setTransactions((prev) => [...prev, { 
+            type: "withdrawal", 
+            amount: transactionAmount, 
+            date: new Date() 
+          }]);
+          toast({
+            title: "Withdrawal Successful",
+            description: "Your withdrawal has been processed successfully.",
+          });
+        })
+        .on("FAILED", (error: any) => {
+          console.error("Withdrawal failed:", error);
+          toast({
+            title: "Withdrawal Failed",
+            description: "There was an error processing your withdrawal.",
+            variant: "destructive",
+          });
+        });
+      });
+    }
+
     return () => {
-      // Cleanup event listeners
-      document.removeEventListener('intasend:withdraw:complete', () => {});
-      document.removeEventListener('intasend:withdraw:failed', () => {});
+      // Cleanup if needed
+      const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
+      if (withdrawalButton) {
+        withdrawalButton.removeEventListener('click', () => {});
+      }
     };
   }, [amount, toast]);
 
