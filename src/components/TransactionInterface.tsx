@@ -47,14 +47,9 @@ export function TransactionInterface() {
         });
       });
 
-    // Initialize IntaSend for withdrawals
-    const withdrawalButton = new window.IntaSend({
-      publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
-      live: true,
-    }).withdraw();
-
-    withdrawalButton.on("COMPLETE", (results: any) => {
-      console.log("Withdrawal successful", results);
+    // Add event listeners for withdrawal button
+    document.addEventListener('intasend:withdraw:complete', (event: any) => {
+      console.log("Withdrawal successful", event.detail);
       const transactionAmount = parseFloat(amount);
       setBalance((prev) => prev - transactionAmount);
       setTransactions((prev) => [...prev, { 
@@ -68,8 +63,8 @@ export function TransactionInterface() {
       });
     });
 
-    withdrawalButton.on("FAILED", (error: any) => {
-      console.error("Withdrawal failed:", error);
+    document.addEventListener('intasend:withdraw:failed', (event: any) => {
+      console.error("Withdrawal failed:", event.detail);
       toast({
         title: "Withdrawal Failed",
         description: "There was an error processing your withdrawal.",
@@ -78,7 +73,9 @@ export function TransactionInterface() {
     });
 
     return () => {
-      // Cleanup if needed
+      // Cleanup event listeners
+      document.removeEventListener('intasend:withdraw:complete', () => {});
+      document.removeEventListener('intasend:withdraw:failed', () => {});
     };
   }, [amount, toast]);
 
