@@ -21,7 +21,7 @@ serve(async (req) => {
     }]
 
     // First create the transfer using live API
-    const createResponse = await fetch('https://payment.intasend.com/api/v1/payment/transfer/', {
+    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/send-money/initiate/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,12 +42,12 @@ serve(async (req) => {
     const createData = await createResponse.json()
     console.log('Transfer created:', createData)
 
-    if (!createData.tracking_id) {
-      throw new Error('No tracking ID received from transfer creation')
+    if (!createData.invoice.id) {
+      throw new Error('No invoice ID received from transfer creation')
     }
 
     // Then approve the transfer using live API
-    const approveResponse = await fetch(`https://payment.intasend.com/api/v1/payment/transfer/${createData.tracking_id}/approve/`, {
+    const approveResponse = await fetch(`https://sandbox.intasend.com/api/v1/send-money/${createData.invoice.id}/process/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
