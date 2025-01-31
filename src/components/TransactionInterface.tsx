@@ -19,6 +19,7 @@ export function TransactionInterface() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Initialize IntaSend for deposits
     const intaSend = new window.IntaSend({
       publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
       live: true,
@@ -46,10 +47,40 @@ export function TransactionInterface() {
         });
       });
 
+    // Initialize IntaSend for withdrawals
+    const withdrawalButton = new window.IntaSend({
+      publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
+      live: true,
+    }).withdraw();
+
+    withdrawalButton.on("COMPLETE", (results: any) => {
+      console.log("Withdrawal successful", results);
+      const transactionAmount = parseFloat(amount);
+      setBalance((prev) => prev - transactionAmount);
+      setTransactions((prev) => [...prev, { 
+        type: "withdrawal", 
+        amount: transactionAmount, 
+        date: new Date() 
+      }]);
+      toast({
+        title: "Withdrawal Successful",
+        description: "Your withdrawal has been processed successfully.",
+      });
+    });
+
+    withdrawalButton.on("FAILED", (error: any) => {
+      console.error("Withdrawal failed:", error);
+      toast({
+        title: "Withdrawal Failed",
+        description: "There was an error processing your withdrawal.",
+        variant: "destructive",
+      });
+    });
+
     return () => {
       // Cleanup if needed
     };
-  }, [amount]);
+  }, [amount, toast]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -60,38 +91,6 @@ export function TransactionInterface() {
 
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhoneNumber(e.target.value);
-  };
-
-  const handleWithdraw = async () => {
-    try {
-      const response = await supabase.functions.invoke('process-withdrawal', {
-        body: { amount, phoneNumber }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const transactionAmount = parseFloat(amount);
-      setBalance((prev) => prev - transactionAmount);
-      setTransactions((prev) => [...prev, { 
-        type: "withdrawal", 
-        amount: transactionAmount, 
-        date: new Date() 
-      }]);
-
-      toast({
-        title: "Withdrawal Initiated",
-        description: "Your withdrawal request has been processed.",
-      });
-    } catch (error) {
-      console.error('Withdrawal error:', error);
-      toast({
-        title: "Withdrawal Failed",
-        description: error.message || "There was an error processing your withdrawal.",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
@@ -143,12 +142,17 @@ export function TransactionInterface() {
           >
             DEPOSIT
           </button>
-          <Button
-            onClick={handleWithdraw}
-            disabled={!phoneNumber || !amount || parseFloat(amount) <= 0}
+          <button
+            className="intaSendWithdrawButton"
+            data-phone_number={phoneNumber}
+            data-amount={amount}
+            data-currency="KES"
+            data-email="joe@doe.com"
+            data-first_name="JOE"
+            data-last_name="DOE"
           >
             WITHDRAW
-          </Button>
+          </button>
         </div>
       </Card>
 
