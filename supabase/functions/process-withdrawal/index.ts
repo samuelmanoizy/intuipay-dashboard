@@ -16,7 +16,7 @@ serve(async (req) => {
     console.log('Processing withdrawal:', { phoneNumber, amount })
 
     // Create the M-Pesa withdrawal request
-    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/send-money/mpesa/', {
+    const createResponse = await fetch('https://payment.intasend.com/api/v1/payment/mpesa-stk/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,27 +26,27 @@ serve(async (req) => {
         phone_number: phoneNumber,
         amount: amount,
         currency: "KES",
-        is_public: false,
+        method: "M-PESA",
         api_ref: Date.now().toString(),
-        comment: "Withdrawal via M-Pesa"
+        narrative: "Withdrawal via M-Pesa"
       })
     })
 
     if (!createResponse.ok) {
       const errorData = await createResponse.text()
-      console.error('Transfer creation failed:', errorData)
-      throw new Error(`Transfer creation failed: ${errorData}`)
+      console.error('Payment creation failed:', errorData)
+      throw new Error(`Payment creation failed: ${errorData}`)
     }
 
     const createData = await createResponse.json()
-    console.log('Transfer created:', createData)
+    console.log('Payment created:', createData)
 
-    if (!createData.invoice.id) {
-      throw new Error('No invoice ID received from transfer creation')
+    if (!createData.invoice_id) {
+      throw new Error('No invoice ID received from payment creation')
     }
 
     // Process the M-Pesa withdrawal
-    const processResponse = await fetch(`https://sandbox.intasend.com/api/v1/send-money/mpesa/${createData.invoice.id}/process/`, {
+    const processResponse = await fetch(`https://payment.intasend.com/api/v1/payment/${createData.invoice_id}/process/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,12 +56,12 @@ serve(async (req) => {
 
     if (!processResponse.ok) {
       const errorData = await processResponse.text()
-      console.error('Transfer processing failed:', errorData)
-      throw new Error(`Transfer processing failed: ${errorData}`)
+      console.error('Payment processing failed:', errorData)
+      throw new Error(`Payment processing failed: ${errorData}`)
     }
 
     const processData = await processResponse.json()
-    console.log('Transfer processed:', processData)
+    console.log('Payment processed:', processData)
 
     return new Response(JSON.stringify(processData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
