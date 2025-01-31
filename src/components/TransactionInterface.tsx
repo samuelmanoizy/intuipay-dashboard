@@ -97,36 +97,41 @@ export function TransactionInterface() {
   }, [amount, phoneNumber, toast]);
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-8">
       <BalanceCard balance={balance} />
-      <AmountInput amount={amount} onChange={setAmount} />
-      <PhoneInput phoneNumber={phoneNumber} onChange={setPhoneNumber} />
       
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Actions</h2>
-        <div className="flex gap-4">
-          <button
-            className="intaSendPayButton"
-            data-amount={amount}
-            data-currency="KES"
-            data-email="joe@doe.com"
-            data-first_name="JOE"
-            data-last_name="DOE"
-            data-country="KE"
-          >
-            DEPOSIT
-          </button>
-          <button
-            className="intaSendWithdrawButton"
-            data-phone_number={phoneNumber}
-            data-amount={amount}
-            data-currency="KES"
-            data-email="joe@doe.com"
-            data-first_name="JOE"
-            data-last_name="DOE"
-          >
-            WITHDRAW
-          </button>
+      <div className="grid md:grid-cols-2 gap-8">
+        <AmountInput amount={amount} onChange={setAmount} />
+        <PhoneInput phoneNumber={phoneNumber} onChange={setPhoneNumber} />
+      </div>
+      
+      <Card className="metallic-card p-8">
+        <div className="space-y-6">
+          <h2 className="text-2xl font-semibold text-muted-foreground">Actions</h2>
+          <div className="flex flex-wrap gap-4">
+            <button
+              className="px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
+              data-amount={amount}
+              data-currency="KES"
+              data-email="joe@doe.com"
+              data-first_name="JOE"
+              data-last_name="DOE"
+              data-country="KE"
+            >
+              DEPOSIT
+            </button>
+            <button
+              className="px-6 py-3 rounded-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium transition-colors"
+              data-phone_number={phoneNumber}
+              data-amount={amount}
+              data-currency="KES"
+              data-email="joe@doe.com"
+              data-first_name="JOE"
+              data-last_name="DOE"
+            >
+              WITHDRAW
+            </button>
+          </div>
         </div>
       </Card>
 

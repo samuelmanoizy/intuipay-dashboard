@@ -15,18 +15,24 @@ export function AmountInput({ amount, onChange }: AmountInputProps) {
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Transaction Amount</h2>
-      <div className="flex gap-4 items-center">
-        <Input
-          type="number"
-          min="0"
-          value={amount}
-          onChange={handleAmountChange}
-          className="max-w-[200px]"
-          placeholder="Enter amount"
-        />
-        <span className="text-sm text-gray-500">KES</span>
+    <Card className="metallic-card p-8">
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold text-muted-foreground">Transaction Amount</h2>
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1 max-w-[200px]">
+            <Input
+              type="number"
+              min="0"
+              value={amount}
+              onChange={handleAmountChange}
+              className="pr-16 bg-background/50 border-secondary"
+              placeholder="Enter amount"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              KES
+            </span>
+          </div>
+        </div>
       </div>
     </Card>
   );
