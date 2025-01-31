@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 // Define interface for profile data
 interface Profile {
@@ -66,6 +68,7 @@ const forgotPasswordSchema = z.object({
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -101,8 +104,8 @@ export default function Auth() {
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     try {
       setIsLoading(true);
+      setAuthError(null);
       
-      // First check if username already exists
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
         .select('username')
@@ -114,15 +117,10 @@ export default function Auth() {
       }
 
       if (existingUser) {
-        toast({
-          variant: "destructive",
-          title: "Error creating account",
-          description: "This username is already taken. Please choose another one.",
-        });
+        setAuthError("This username is already taken. Please choose another one.");
         return;
       }
 
-      // Sign up the user with metadata
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -136,7 +134,8 @@ export default function Auth() {
 
       if (signUpError) {
         if (signUpError.message === "User already registered") {
-          throw new Error("This email is already registered. Please try signing in instead.");
+          setAuthError("This email is already registered. Please try signing in instead.");
+          return;
         }
         throw signUpError;
       }
@@ -151,11 +150,7 @@ export default function Auth() {
       });
       navigate("/");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error creating account",
-        description: error.message || "Failed to create account. Please try again.",
-      });
+      setAuthError(error.message || "Failed to create account. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -164,6 +159,8 @@ export default function Auth() {
   const onSignIn = async (values: z.infer<typeof signInSchema>) => {
     try {
       setIsLoading(true);
+      setAuthError(null);
+      
       const { error, data } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -171,7 +168,8 @@ export default function Auth() {
 
       if (error) {
         if (error.message === "Invalid login credentials") {
-          throw new Error("Invalid email or password. Please try again.");
+          setAuthError("Invalid email or password. Please check your credentials and try again.");
+          return;
         }
         throw error;
       }
@@ -185,11 +183,7 @@ export default function Auth() {
       });
       navigate("/");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error signing in",
-        description: error.message || "Failed to sign in. Please try again.",
-      });
+      setAuthError(error.message || "Failed to sign in. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -198,20 +192,20 @@ export default function Auth() {
   const onForgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {
     try {
       setIsLoading(true);
+      setAuthError(null);
       
-      // First verify username and secret ID match
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select<"profiles", Profile>()
+        .select()
         .eq("username", values.username)
         .eq("secret_id_number", values.secretIdNumber)
         .maybeSingle();
 
       if (profileError || !profile) {
-        throw new Error("Invalid username or secret ID number. Please try again.");
+        setAuthError("Invalid username or secret ID number. Please try again.");
+        return;
       }
 
-      // Get user's email using the profile ID
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user?.email) {
         throw new Error("Could not find user email");
@@ -229,24 +223,26 @@ export default function Auth() {
       });
       navigate("/");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error resetting password",
-        description: error.message || "Failed to reset password. Please try again.",
-      });
+      setAuthError(error.message || "Failed to reset password. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="container max-w-md mx-auto mt-8">
+    <div className="container max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
       <Tabs defaultValue="signin" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="signin">Sign In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          <TabsTrigger value="forgot">Forgot Password</TabsTrigger>
+          <TabsTrigger value="forgot">Reset Password</TabsTrigger>
         </TabsList>
+
+        {authError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
 
         <TabsContent value="signin">
           <Form {...signInForm}>
@@ -258,7 +254,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" />
+                      <Input {...field} type="email" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -271,14 +267,21 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" />
+                      <Input {...field} type="password" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                Sign In
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
           </Form>
@@ -294,7 +297,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" />
+                      <Input {...field} type="email" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -307,7 +310,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -320,7 +323,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Secret ID Number</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -333,7 +336,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" />
+                      <Input {...field} type="password" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -346,14 +349,21 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" />
+                      <Input {...field} type="password" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                Sign Up
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Sign Up"
+                )}
               </Button>
             </form>
           </Form>
@@ -369,7 +379,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -382,7 +392,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Secret ID Number</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -395,7 +405,7 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" />
+                      <Input {...field} type="password" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -408,14 +418,21 @@ export default function Auth() {
                   <FormItem>
                     <FormLabel>Confirm New Password</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" />
+                      <Input {...field} type="password" className="bg-gray-50" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                Reset Password
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Resetting password...
+                  </>
+                ) : (
+                  "Reset Password"
+                )}
               </Button>
             </form>
           </Form>
