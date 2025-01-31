@@ -16,7 +16,7 @@ serve(async (req) => {
     console.log('Processing withdrawal:', { phoneNumber, amount })
 
     // First create the transfer using Mobile Money API
-    const createResponse = await fetch('https://sandbox.intasend.com/api/v1/payment/mobile-money/send', {
+    const createResponse = await fetch('https://payment.intasend.com/api/v1/send-money/mpesa/send/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,8 +25,7 @@ serve(async (req) => {
       body: JSON.stringify({
         phone_number: phoneNumber,
         amount: amount,
-        currency: "KES",
-        provider: "mpesa"
+        currency: "KES"
       })
     })
 
@@ -44,7 +43,7 @@ serve(async (req) => {
     }
 
     // Then process the transfer
-    const processResponse = await fetch(`https://sandbox.intasend.com/api/v1/payment/${createData.id}/process`, {
+    const processResponse = await fetch(`https://payment.intasend.com/api/v1/send-money/mpesa/${createData.id}/process/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
