@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BalanceCard } from "./transaction/BalanceCard";
 import { AmountInput } from "./transaction/AmountInput";
 import { PhoneInput } from "./transaction/PhoneInput";
 import { TransactionHistory } from "./transaction/TransactionHistory";
+import { ActionButtons } from "./transaction/ActionButtons";
 
 declare global {
   interface Window {
@@ -105,35 +105,9 @@ export function TransactionInterface() {
         <PhoneInput phoneNumber={phoneNumber} onChange={setPhoneNumber} />
       </div>
       
-      <Card className="metallic-card p-8">
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-muted-foreground">Actions</h2>
-          <div className="flex flex-wrap gap-4">
-            <button
-              className="px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
-              data-amount={amount}
-              data-currency="KES"
-              data-email="joe@doe.com"
-              data-first_name="JOE"
-              data-last_name="DOE"
-              data-country="KE"
-            >
-              DEPOSIT
-            </button>
-            <button
-              className="px-6 py-3 rounded-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium transition-colors"
-              data-phone_number={phoneNumber}
-              data-amount={amount}
-              data-currency="KES"
-              data-email="joe@doe.com"
-              data-first_name="JOE"
-              data-last_name="DOE"
-            >
-              WITHDRAW
-            </button>
-          </div>
-        </div>
-      </Card>
+      <div className="metallic-card p-8">
+        <ActionButtons amount={amount} phoneNumber={phoneNumber} />
+      </div>
 
       <TransactionHistory transactions={transactions} />
     </div>
