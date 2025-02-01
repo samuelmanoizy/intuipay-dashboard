@@ -6,6 +6,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -13,11 +14,26 @@ serve(async (req) => {
   try {
     const { phoneNumber, amount } = await req.json()
     
+    // Validate input
+    if (!phoneNumber || !amount) {
+      return new Response(
+        JSON.stringify({ error: 'Phone number and amount are required' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Format transactions for IntaSend API
     const transactions = [{
       account: phoneNumber,
       amount: amount.toString()
     }]
 
+    console.log('Processing withdrawal:', { phoneNumber, amount })
+
+    // Make request to IntaSend API
     const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer/', {
       method: 'POST',
       headers: {
@@ -31,32 +47,52 @@ serve(async (req) => {
     })
 
     const data = await response.json()
+    console.log('IntaSend API response:', data)
 
-    // Approve the transfer
+    // Check if we got a tracking ID
     if (data.tracking_id) {
-      const approveResponse = await fetch(`https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/approve/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
+      console.log('Approving transfer with tracking ID:', data.tracking_id)
+      
+      // Approve the transfer
+      const approveResponse = await fetch(
+        `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/approve/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
+          }
         }
-      })
+      )
       
       const approveData = await approveResponse.json()
-      return new Response(JSON.stringify(approveData), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      })
+      console.log('Transfer approval response:', approveData)
+
+      return new Response(
+        JSON.stringify(approveData),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
     }
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
+    return new Response(
+      JSON.stringify(data),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    )
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    })
+    console.error('Error processing withdrawal:', error)
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
+    )
   }
 })
