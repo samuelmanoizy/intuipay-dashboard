@@ -10,8 +10,8 @@ export function ActionButtons({ amount, phoneNumber }: ActionButtonsProps) {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-muted-foreground">Actions</h2>
       <div className="flex flex-wrap gap-4">
-        <Button
-          className="intaSendPayButton"
+        <button
+          className="intasend-pay-button px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
           data-amount={amount}
           data-currency="KES"
           data-email="joe@doe.com"
@@ -20,9 +20,9 @@ export function ActionButtons({ amount, phoneNumber }: ActionButtonsProps) {
           data-country="KE"
         >
           DEPOSIT
-        </Button>
-        <Button
-          className="intaSendWithdrawButton"
+        </button>
+        <button
+          className="intasend-withdraw-button px-6 py-3 rounded-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium transition-colors"
           data-phone_number={phoneNumber}
           data-amount={amount}
           data-currency="KES"
@@ -31,7 +31,7 @@ export function ActionButtons({ amount, phoneNumber }: ActionButtonsProps) {
           data-last_name="DOE"
         >
           WITHDRAW
-        </Button>
+        </button>
       </div>
     </div>
   );

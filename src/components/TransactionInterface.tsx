@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { BalanceCard } from "./transaction/BalanceCard";
 import { AmountInput } from "./transaction/AmountInput";
 import { PhoneInput } from "./transaction/PhoneInput";
 import { TransactionHistory } from "./transaction/TransactionHistory";
 import { ActionButtons } from "./transaction/ActionButtons";
+import { useIntaSend } from "@/hooks/useIntaSend";
 
 declare global {
   interface Window {
@@ -18,83 +17,20 @@ export function TransactionInterface() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [amount, setAmount] = useState("10");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const { toast } = useToast();
 
-  useEffect(() => {
-    // Initialize IntaSend for deposits
-    const intaSend = new window.IntaSend({
-      publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
-      live: true,
-    });
+  const handleTransactionComplete = (type: string, transactionAmount: number) => {
+    setBalance((prev) => type === "withdrawal" ? prev - transactionAmount : prev + transactionAmount);
+    setTransactions((prev) => [...prev, { 
+      type, 
+      amount: transactionAmount, 
+      date: new Date() 
+    }]);
+  };
 
-    // Handle deposit events
-    intaSend.on("COMPLETE", (results: any) => {
-      console.log("Transaction successful", results);
-      toast({
-        title: "Transaction Successful",
-        description: "Your transaction has been processed successfully.",
-      });
-      const transactionAmount = parseFloat(amount);
-      setBalance((prev) => prev + transactionAmount);
-      setTransactions((prev) => [...prev, { 
-        type: results.type || "deposit", 
-        amount: transactionAmount, 
-        date: new Date() 
-      }]);
-    })
-    .on("FAILED", (results: any) => {
-      console.log("Transaction failed", results);
-      toast({
-        title: "Transaction Failed",
-        description: "There was an error processing your transaction.",
-        variant: "destructive",
-      });
-    });
-
-    // Handle withdrawal button click
-    const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
-    if (withdrawalButton) {
-      withdrawalButton.addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        try {
-          const { data, error } = await supabase.functions.invoke('process-withdrawal', {
-            body: { phoneNumber, amount: parseFloat(amount) }
-          });
-
-          if (error) throw error;
-
-          console.log("Withdrawal successful", data);
-          const transactionAmount = parseFloat(amount);
-          setBalance((prev) => prev - transactionAmount);
-          setTransactions((prev) => [...prev, { 
-            type: "withdrawal", 
-            amount: transactionAmount, 
-            date: new Date() 
-          }]);
-          
-          toast({
-            title: "Withdrawal Successful",
-            description: "Your withdrawal has been processed successfully.",
-          });
-        } catch (error) {
-          console.error("Withdrawal failed:", error);
-          toast({
-            title: "Withdrawal Failed",
-            description: "There was an error processing your withdrawal.",
-            variant: "destructive",
-          });
-        }
-      });
-    }
-
-    return () => {
-      const withdrawalButton = document.querySelector('.intaSendWithdrawButton');
-      if (withdrawalButton) {
-        withdrawalButton.removeEventListener('click', () => {});
-      }
-    };
-  }, [amount, phoneNumber, toast]);
+  useIntaSend({
+    amount,
+    onTransactionComplete: handleTransactionComplete
+  });
 
   return (
     <div className="grid gap-8">
