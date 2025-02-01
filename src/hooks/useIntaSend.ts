@@ -12,28 +12,30 @@ export function useIntaSend({ amount, onTransactionComplete }: UseIntaSendProps)
 
   useEffect(() => {
     // Initialize IntaSend for deposits
-    const intaSend = new window.IntaSend({
-      publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
-      live: true,
-    });
+    if (typeof window !== 'undefined' && window.IntaSend) {
+      const intaSend = new window.IntaSend({
+        publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
+        live: true,
+      });
 
-    // Handle deposit events
-    intaSend.on("COMPLETE", (results: any) => {
-      console.log("Transaction successful", results);
-      toast({
-        title: "Transaction Successful",
-        description: "Your transaction has been processed successfully.",
+      // Handle deposit events
+      intaSend.on("COMPLETE", (results: any) => {
+        console.log("Transaction successful", results);
+        toast({
+          title: "Transaction Successful",
+          description: "Your transaction has been processed successfully.",
+        });
+        onTransactionComplete("deposit", parseFloat(amount));
+      })
+      .on("FAILED", (results: any) => {
+        console.log("Transaction failed", results);
+        toast({
+          title: "Transaction Failed",
+          description: "There was an error processing your transaction.",
+          variant: "destructive",
+        });
       });
-      onTransactionComplete(results.type || "deposit", parseFloat(amount));
-    })
-    .on("FAILED", (results: any) => {
-      console.log("Transaction failed", results);
-      toast({
-        title: "Transaction Failed",
-        description: "There was an error processing your transaction.",
-        variant: "destructive",
-      });
-    });
+    }
 
     // Handle withdrawal button click
     const withdrawalButton = document.querySelector('.intasend-withdraw-button');

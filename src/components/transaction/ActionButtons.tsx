@@ -14,9 +14,9 @@ export function ActionButtons({ amount, phoneNumber }: ActionButtonsProps) {
           className="intasend-pay-button px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
           data-amount={amount}
           data-currency="KES"
-          data-email="joe@doe.com"
-          data-first_name="JOE"
-          data-last_name="DOE"
+          data-email="mwadimemanoizy@gmail.com"
+          data-first_name="MWADIME"
+          data-last_name="MANOIZY"
           data-country="KE"
         >
           DEPOSIT
@@ -26,9 +26,9 @@ export function ActionButtons({ amount, phoneNumber }: ActionButtonsProps) {
           data-phone_number={phoneNumber}
           data-amount={amount}
           data-currency="KES"
-          data-email="joe@doe.com"
-          data-first_name="JOE"
-          data-last_name="DOE"
+          data-email="mwadimemanoizy@gmail.com"
+          data-first_name="MWADIME"
+          data-last_name="MANOIZY"
         >
           WITHDRAW
         </button>
