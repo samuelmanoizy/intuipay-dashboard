@@ -36,57 +36,46 @@ serve(async (req) => {
 
     console.log('Processing M-Pesa withdrawal:', { formattedPhone, amount })
 
-    try {
-      // Initialize IntaSend SDK
-      const intasend = new IntaSend({
-        token: Deno.env.get('INTASEND_TEST_SECRET_KEY'),
-        publishable_key: 'ISPubKey_test_c54e1f70-0859-4c79-b912-de3b3ae02e42',
-        test: true
-      })
+    // Initialize IntaSend SDK with test credentials
+    const intasend = new IntaSend({
+      token: Deno.env.get('INTASEND_TEST_SECRET_KEY'),
+      publishable_key: 'ISPubKey_test_c54e1f70-0859-4c79-b912-de3b3ae02e42',
+      test: true
+    })
 
-      // Create payout instance
-      const payouts = intasend.payouts()
-      
-      // Process the payout
-      const response = await payouts.mpesa({
-        currency: 'KES',
-        requires_approval: 'NO', // Set to auto-approve transactions
-        transactions: [{
-          name: 'Customer Withdrawal', // Generic name since we don't collect it
-          account: formattedPhone,
-          amount: amount.toString(),
-          narrative: 'Wallet Withdrawal'
-        }]
-      })
+    // Create payout instance and process the withdrawal
+    const payouts = intasend.payouts()
+    const response = await payouts.mpesa({
+      currency: 'KES',
+      requires_approval: 'NO',
+      transactions: [{
+        name: 'Customer Withdrawal',
+        account: formattedPhone,
+        amount: amount.toString(),
+        narrative: 'Wallet Withdrawal'
+      }]
+    })
 
-      console.log('IntaSend payout response:', response)
+    console.log('IntaSend payout response:', response)
 
-      return new Response(
-        JSON.stringify({ success: true, data: response }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      )
-
-    } catch (apiError) {
-      console.error('IntaSend API error:', apiError)
-      return new Response(
-        JSON.stringify({ error: `IntaSend API error: ${apiError.message || 'Error processing withdrawal'}` }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      )
-    }
+    return new Response(
+      JSON.stringify({ success: true, data: response }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    )
 
   } catch (error) {
     console.error('Error processing request:', error)
     return new Response(
-      JSON.stringify({ error: 'Invalid request format' }),
+      JSON.stringify({ 
+        error: error.message || 'Error processing withdrawal',
+        details: error
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       }
     )
   }
