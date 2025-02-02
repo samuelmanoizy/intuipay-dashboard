@@ -31,14 +31,14 @@ serve(async (req) => {
       amount: amount.toString()
     }]
 
-    console.log('Processing withdrawal:', { phoneNumber, amount })
+    console.log('Processing M-Pesa withdrawal:', { phoneNumber, amount })
 
-    // Make request to IntaSend API
+    // Make initial transfer request to IntaSend API
     const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
+        'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
       },
       body: JSON.stringify({
         currency: "KES",
@@ -47,28 +47,42 @@ serve(async (req) => {
     })
 
     const data = await response.json()
-    console.log('IntaSend API response:', data)
+    console.log('IntaSend transfer initiation response:', data)
 
     // Check if we got a tracking ID
     if (data.tracking_id) {
-      console.log('Approving transfer with tracking ID:', data.tracking_id)
+      console.log('Approving M-Pesa transfer with tracking ID:', data.tracking_id)
       
-      // Approve the transfer
+      // Approve the transfer (similar to $transfer->approve() in PHP)
       const approveResponse = await fetch(
         `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/approve/`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${Deno.env.get('INTASEND_SECRET_KEY')}`
+            'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
           }
         }
       )
       
       const approveData = await approveResponse.json()
-      console.log('Transfer approval response:', approveData)
+      console.log('M-Pesa transfer approval response:', approveData)
+
+      // Check transfer status (similar to $transfer->status() in PHP)
+      const statusResponse = await fetch(
+        `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/status/`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
+          }
+        }
+      )
+
+      const statusData = await statusResponse.json()
+      console.log('M-Pesa transfer status:', statusData)
 
       return new Response(
-        JSON.stringify(approveData),
+        JSON.stringify({ ...approveData, status: statusData }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -85,7 +99,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error processing withdrawal:', error)
+    console.error('Error processing M-Pesa withdrawal:', error)
     
     return new Response(
       JSON.stringify({ error: error.message }),
