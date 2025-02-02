@@ -27,17 +27,18 @@ serve(async (req) => {
       )
     }
 
-    // Format transactions for IntaSend API
-    const transactions = [{
-      account: phoneNumber,
-      amount: amount.toString()
-    }]
+    // Format phone number to include country code if not present
+    const formattedPhone = phoneNumber.startsWith('+') ? 
+      phoneNumber : 
+      phoneNumber.startsWith('254') ? 
+        `+${phoneNumber}` : 
+        `+254${phoneNumber.replace(/^0+/, '')}`
 
-    console.log('Processing M-Pesa withdrawal:', { phoneNumber, amount })
+    console.log('Processing M-Pesa withdrawal:', { formattedPhone, amount })
 
     try {
-      // Make initial transfer request to IntaSend API using test secret key
-      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer/', {
+      // Make initial transfer request to IntaSend API
+      const response = await fetch('https://sandbox.intasend.com/api/v1/send-money/mpesa/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +46,9 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           currency: "KES",
-          transactions: transactions
+          phone_number: formattedPhone,
+          amount: amount.toString(),
+          api_ref: crypto.randomUUID()
         })
       })
 
@@ -56,57 +59,15 @@ serve(async (req) => {
       }
 
       const data = await response.json()
-      console.log('IntaSend transfer initiation response:', data)
+      console.log('IntaSend transfer response:', data)
 
       // Check if we got a tracking ID
-      if (!data.tracking_id) {
-        throw new Error('No tracking ID received from IntaSend')
+      if (!data.invoice?.id) {
+        throw new Error('No invoice ID received from IntaSend')
       }
-
-      console.log('Approving M-Pesa transfer with tracking ID:', data.tracking_id)
-      
-      // Approve the transfer
-      const approveResponse = await fetch(
-        `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/approve/`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
-          }
-        }
-      )
-
-      if (!approveResponse.ok) {
-        const errorData = await approveResponse.text()
-        console.error('IntaSend approval error:', errorData)
-        throw new Error(`IntaSend approval error: ${approveResponse.status} ${approveResponse.statusText}`)
-      }
-      
-      const approveData = await approveResponse.json()
-      console.log('M-Pesa transfer approval response:', approveData)
-
-      // Check transfer status
-      const statusResponse = await fetch(
-        `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/status/`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
-          }
-        }
-      )
-
-      if (!statusResponse.ok) {
-        const errorData = await statusResponse.text()
-        console.error('IntaSend status check error:', errorData)
-        throw new Error(`IntaSend status check error: ${statusResponse.status} ${statusResponse.statusText}`)
-      }
-
-      const statusData = await statusResponse.json()
-      console.log('M-Pesa transfer status:', statusData)
 
       return new Response(
-        JSON.stringify({ success: true, data: { ...approveData, status: statusData } }),
+        JSON.stringify({ success: true, data }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
