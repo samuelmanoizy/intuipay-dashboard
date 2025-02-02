@@ -56,19 +56,40 @@ export function TransactionInterface() {
       withdrawalButton.addEventListener('click', async (e) => {
         e.preventDefault();
         
+        // Validate phone number and amount before proceeding
+        if (!phoneNumber || phoneNumber.trim() === '') {
+          toast({
+            title: "Validation Error",
+            description: "Please enter a valid phone number.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const numericAmount = parseFloat(amount);
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+          toast({
+            title: "Validation Error",
+            description: "Please enter a valid amount greater than 0.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         try {
+          console.log('Initiating withdrawal:', { phoneNumber, amount: numericAmount });
+          
           const { data, error } = await supabase.functions.invoke('process-withdrawal', {
-            body: { phoneNumber, amount: parseFloat(amount) }
+            body: { phoneNumber, amount: numericAmount }
           });
 
           if (error) throw error;
 
           console.log("Withdrawal successful", data);
-          const transactionAmount = parseFloat(amount);
-          setBalance((prev) => prev - transactionAmount);
+          setBalance((prev) => prev - numericAmount);
           setTransactions((prev) => [...prev, { 
             type: "withdrawal", 
-            amount: transactionAmount, 
+            amount: numericAmount, 
             date: new Date() 
           }]);
           
@@ -80,7 +101,7 @@ export function TransactionInterface() {
           console.error("Withdrawal failed:", error);
           toast({
             title: "Withdrawal Failed",
-            description: "There was an error processing your withdrawal.",
+            description: error.message || "There was an error processing your withdrawal.",
             variant: "destructive",
           });
         }
