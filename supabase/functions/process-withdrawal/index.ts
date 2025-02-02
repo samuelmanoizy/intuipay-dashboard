@@ -33,7 +33,7 @@ serve(async (req) => {
 
     console.log('Processing M-Pesa withdrawal:', { phoneNumber, amount })
 
-    // Make initial transfer request to IntaSend API
+    // Make initial transfer request to IntaSend API using test secret key
     const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer/', {
       method: 'POST',
       headers: {
@@ -53,7 +53,7 @@ serve(async (req) => {
     if (data.tracking_id) {
       console.log('Approving M-Pesa transfer with tracking ID:', data.tracking_id)
       
-      // Approve the transfer (similar to $transfer->approve() in PHP)
+      // Approve the transfer
       const approveResponse = await fetch(
         `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/approve/`,
         {
@@ -67,7 +67,7 @@ serve(async (req) => {
       const approveData = await approveResponse.json()
       console.log('M-Pesa transfer approval response:', approveData)
 
-      // Check transfer status (similar to $transfer->status() in PHP)
+      // Check transfer status
       const statusResponse = await fetch(
         `https://sandbox.intasend.com/api/v1/payment/transfer/${data.tracking_id}/status/`,
         {
