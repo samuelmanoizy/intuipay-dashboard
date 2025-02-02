@@ -79,11 +79,18 @@ export function TransactionInterface() {
         try {
           console.log('Initiating withdrawal:', { phoneNumber, amount: numericAmount });
           
+          // Call the Supabase Edge Function with proper configuration
           const { data, error } = await supabase.functions.invoke('process-withdrawal', {
-            body: { phoneNumber, amount: numericAmount }
+            body: { phoneNumber, amount: numericAmount },
+            headers: {
+              'Content-Type': 'application/json',
+            }
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error("Withdrawal error:", error);
+            throw new Error(error.message || "Failed to process withdrawal");
+          }
 
           console.log("Withdrawal successful", data);
           setBalance((prev) => prev - numericAmount);
