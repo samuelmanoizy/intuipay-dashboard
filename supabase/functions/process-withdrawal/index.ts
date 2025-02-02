@@ -12,7 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const { phoneNumber, amount } = await req.json()
+    // Parse request body
+    const requestData = await req.json()
+    const { phoneNumber, amount } = requestData
     
     // Validate input
     if (!phoneNumber || !amount) {
@@ -33,24 +35,34 @@ serve(async (req) => {
 
     console.log('Processing M-Pesa withdrawal:', { phoneNumber, amount })
 
-    // Make initial transfer request to IntaSend API using test secret key
-    const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
-      },
-      body: JSON.stringify({
-        currency: "KES",
-        transactions: transactions
+    try {
+      // Make initial transfer request to IntaSend API using test secret key
+      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/transfer/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
+        },
+        body: JSON.stringify({
+          currency: "KES",
+          transactions: transactions
+        })
       })
-    })
 
-    const data = await response.json()
-    console.log('IntaSend transfer initiation response:', data)
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('IntaSend API error:', errorData)
+        throw new Error(`IntaSend API error: ${response.status} ${response.statusText}`)
+      }
 
-    // Check if we got a tracking ID
-    if (data.tracking_id) {
+      const data = await response.json()
+      console.log('IntaSend transfer initiation response:', data)
+
+      // Check if we got a tracking ID
+      if (!data.tracking_id) {
+        throw new Error('No tracking ID received from IntaSend')
+      }
+
       console.log('Approving M-Pesa transfer with tracking ID:', data.tracking_id)
       
       // Approve the transfer
@@ -63,6 +75,12 @@ serve(async (req) => {
           }
         }
       )
+
+      if (!approveResponse.ok) {
+        const errorData = await approveResponse.text()
+        console.error('IntaSend approval error:', errorData)
+        throw new Error(`IntaSend approval error: ${approveResponse.status} ${approveResponse.statusText}`)
+      }
       
       const approveData = await approveResponse.json()
       console.log('M-Pesa transfer approval response:', approveData)
@@ -78,31 +96,38 @@ serve(async (req) => {
         }
       )
 
+      if (!statusResponse.ok) {
+        const errorData = await statusResponse.text()
+        console.error('IntaSend status check error:', errorData)
+        throw new Error(`IntaSend status check error: ${statusResponse.status} ${statusResponse.statusText}`)
+      }
+
       const statusData = await statusResponse.json()
       console.log('M-Pesa transfer status:', statusData)
 
       return new Response(
-        JSON.stringify({ ...approveData, status: statusData }),
+        JSON.stringify({ success: true, data: { ...approveData, status: statusData } }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
         }
       )
+
+    } catch (apiError) {
+      console.error('IntaSend API error:', apiError)
+      return new Response(
+        JSON.stringify({ error: apiError.message || 'Error processing withdrawal' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
     }
 
-    return new Response(
-      JSON.stringify(data),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
   } catch (error) {
-    console.error('Error processing M-Pesa withdrawal:', error)
-    
+    console.error('Error processing request:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Invalid request format' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
