@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { IntaSend } from 'npm:intasend-node'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +28,7 @@ serve(async (req) => {
       )
     }
 
-    // Format phone number to match IntaSend requirements (254XXXXXXXXX)
+    // Format phone number (ensure it starts with 254)
     let formattedPhone = phoneNumber.replace(/^\+/, '').replace(/^0/, '254')
     if (!formattedPhone.startsWith('254')) {
       formattedPhone = '254' + formattedPhone
@@ -36,41 +37,32 @@ serve(async (req) => {
     console.log('Processing M-Pesa withdrawal:', { formattedPhone, amount })
 
     try {
-      // Make transfer request to IntaSend API using the correct endpoint for M-Pesa
-      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/mpesa-stk-push/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
-        },
-        body: JSON.stringify({
-          phone_number: formattedPhone,
-          amount: amount.toString(),
-          currency: "KES",
-          api_ref: crypto.randomUUID(),
-          narrative: "Withdrawal",
-          customer_email: "customer@example.com", // Required by IntaSend
-          customer_first_name: "Customer", // Required by IntaSend
-          customer_last_name: "Name" // Required by IntaSend
-        })
+      // Initialize IntaSend SDK
+      const intasend = new IntaSend({
+        token: Deno.env.get('INTASEND_TEST_SECRET_KEY'),
+        publishable_key: 'ISPubKey_test_c54e1f70-0859-4c79-b912-de3b3ae02e42',
+        test: true
       })
 
-      if (!response.ok) {
-        const errorData = await response.text()
-        console.error('IntaSend API error response:', errorData)
-        throw new Error(`IntaSend API error: ${response.status} ${response.statusText}\n${errorData}`)
-      }
+      // Create payout instance
+      const payouts = intasend.payouts()
+      
+      // Process the payout
+      const response = await payouts.mpesa({
+        currency: 'KES',
+        requires_approval: 'NO', // Set to auto-approve transactions
+        transactions: [{
+          name: 'Customer Withdrawal', // Generic name since we don't collect it
+          account: formattedPhone,
+          amount: amount.toString(),
+          narrative: 'Wallet Withdrawal'
+        }]
+      })
 
-      const data = await response.json()
-      console.log('IntaSend transfer response:', data)
-
-      // Check if we got a checkout ID
-      if (!data.checkout_id) {
-        throw new Error('No checkout ID received from IntaSend')
-      }
+      console.log('IntaSend payout response:', response)
 
       return new Response(
-        JSON.stringify({ success: true, data }),
+        JSON.stringify({ success: true, data: response }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -80,7 +72,7 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('IntaSend API error:', apiError)
       return new Response(
-        JSON.stringify({ error: apiError.message || 'Error processing withdrawal' }),
+        JSON.stringify({ error: `IntaSend API error: ${apiError.message || 'Error processing withdrawal'}` }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
