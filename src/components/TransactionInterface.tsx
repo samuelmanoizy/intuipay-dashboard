@@ -79,11 +79,12 @@ export function TransactionInterface() {
         try {
           console.log('Initiating withdrawal:', { phoneNumber, amount: numericAmount });
           
-          // Call the Supabase Edge Function with proper configuration
+          // Call the Supabase Edge Function
           const { data, error } = await supabase.functions.invoke('process-withdrawal', {
             body: { phoneNumber, amount: numericAmount },
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabase.auth.getSession()?.access_token}`
             }
           });
 
