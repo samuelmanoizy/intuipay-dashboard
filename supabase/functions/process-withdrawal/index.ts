@@ -27,12 +27,11 @@ serve(async (req) => {
       )
     }
 
-    // Format phone number to include country code if not present
-    const formattedPhone = phoneNumber.startsWith('+') ? 
-      phoneNumber : 
-      phoneNumber.startsWith('254') ? 
-        `+${phoneNumber}` : 
-        `+254${phoneNumber.replace(/^0+/, '')}`
+    // Format phone number to match IntaSend requirements (254XXXXXXXXX)
+    let formattedPhone = phoneNumber.replace(/^\+/, '').replace(/^0/, '254')
+    if (!formattedPhone.startsWith('254')) {
+      formattedPhone = '254' + formattedPhone
+    }
 
     console.log('Processing M-Pesa withdrawal:', { formattedPhone, amount })
 
@@ -49,14 +48,17 @@ serve(async (req) => {
           amount: amount.toString(),
           currency: "KES",
           api_ref: crypto.randomUUID(),
-          narrative: "Withdrawal"
+          narrative: "Withdrawal",
+          customer_email: "customer@example.com", // Required by IntaSend
+          customer_first_name: "Customer", // Required by IntaSend
+          customer_last_name: "Name" // Required by IntaSend
         })
       })
 
       if (!response.ok) {
         const errorData = await response.text()
-        console.error('IntaSend API error:', errorData)
-        throw new Error(`IntaSend API error: ${response.status} ${response.statusText}`)
+        console.error('IntaSend API error response:', errorData)
+        throw new Error(`IntaSend API error: ${response.status} ${response.statusText}\n${errorData}`)
       }
 
       const data = await response.json()
