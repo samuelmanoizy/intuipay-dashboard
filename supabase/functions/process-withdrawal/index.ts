@@ -37,18 +37,19 @@ serve(async (req) => {
     console.log('Processing M-Pesa withdrawal:', { formattedPhone, amount })
 
     try {
-      // Make initial transfer request to IntaSend API
-      const response = await fetch('https://sandbox.intasend.com/api/v1/send-money/mpesa/', {
+      // Make transfer request to IntaSend API using the correct endpoint for M-Pesa
+      const response = await fetch('https://sandbox.intasend.com/api/v1/payment/mpesa-stk-push/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${Deno.env.get('INTASEND_TEST_SECRET_KEY')}`
         },
         body: JSON.stringify({
-          currency: "KES",
           phone_number: formattedPhone,
           amount: amount.toString(),
-          api_ref: crypto.randomUUID()
+          currency: "KES",
+          api_ref: crypto.randomUUID(),
+          narrative: "Withdrawal"
         })
       })
 
@@ -61,9 +62,9 @@ serve(async (req) => {
       const data = await response.json()
       console.log('IntaSend transfer response:', data)
 
-      // Check if we got a tracking ID
-      if (!data.invoice?.id) {
-        throw new Error('No invoice ID received from IntaSend')
+      // Check if we got a checkout ID
+      if (!data.checkout_id) {
+        throw new Error('No checkout ID received from IntaSend')
       }
 
       return new Response(
