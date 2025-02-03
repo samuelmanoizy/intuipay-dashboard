@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModeToggle } from "@/components/ModeToggle";
+import { Video, Globe, Users } from "lucide-react";
 
 // Define interface for profile data
 interface Profile {
@@ -238,18 +239,40 @@ export default function Auth() {
   return (
     <div className="min-h-screen">
       <div className="container max-w-6xl mx-auto">
-        <header className="py-6 px-4 flex justify-end">
+        <header className="py-6 px-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary">
+              <Video className="w-6 h-6" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent animate-shine">
+              CommonTube
+            </h1>
+          </div>
           <ModeToggle />
         </header>
         
         <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
           <div className="space-y-6">
-            <h1 className="text-4xl font-bold tracking-tight">
-              Welcome to Our Platform
-            </h1>
+            <h2 className="text-4xl font-bold tracking-tight">
+              Share and Connect
+            </h2>
             <p className="text-lg text-muted-foreground">
-              Join our community and unlock access to amazing features and content.
+              Join our community to share videos, connect with others, and discover amazing content.
             </p>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center p-4 metallic-card">
+                <Video className="w-8 h-8 mb-2 text-primary" />
+                <span className="text-sm">Share Videos</span>
+              </div>
+              <div className="flex flex-col items-center p-4 metallic-card">
+                <Globe className="w-8 h-8 mb-2 text-primary" />
+                <span className="text-sm">Global Reach</span>
+              </div>
+              <div className="flex flex-col items-center p-4 metallic-card">
+                <Users className="w-8 h-8 mb-2 text-primary" />
+                <span className="text-sm">Community</span>
+              </div>
+            </div>
           </div>
           
           <div className="metallic-card p-6">
