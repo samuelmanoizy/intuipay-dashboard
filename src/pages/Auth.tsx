@@ -109,16 +109,13 @@ export default function Auth() {
     try {
       setIsLoading(true);
       
-      // First check if username already exists
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
         .select('username')
         .eq('username', values.username)
         .maybeSingle();
 
-      if (existingUserError) {
-        throw existingUserError;
-      }
+      if (existingUserError) throw existingUserError;
 
       if (existingUser) {
         toast({
@@ -129,7 +126,6 @@ export default function Auth() {
         return;
       }
 
-      // Sign up the user with metadata
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -206,22 +202,15 @@ export default function Auth() {
     try {
       setIsLoading(true);
       
-      // First verify username and secret ID match
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select<"profiles", Profile>()
+        .select()
         .eq("username", values.username)
         .eq("secret_id_number", values.secretIdNumber)
         .maybeSingle();
 
       if (profileError || !profile) {
         throw new Error("Invalid username or secret ID number. Please try again.");
-      }
-
-      // Get user's email using the profile ID
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user?.email) {
-        throw new Error("Could not find user email");
       }
 
       const { error: updateError } = await supabase.auth.updateUser({
@@ -271,178 +260,178 @@ export default function Auth() {
                 <TabsTrigger value="forgot">Forgot Password</TabsTrigger>
               </TabsList>
 
-        <TabsContent value="signin">
-          <Form {...signInForm}>
-            <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
-              <FormField
-                control={signInForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={signInForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                Sign In
-              </Button>
-            </form>
-          </Form>
-        </TabsContent>
+              <TabsContent value="signin">
+                <Form {...signInForm}>
+                  <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
+                    <FormField
+                      control={signInForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signInForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      Sign In
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
 
-        <TabsContent value="signup">
-          <Form {...signUpForm}>
-            <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
-              <FormField
-                control={signUpForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={signUpForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={signUpForm.control}
-                name="secretIdNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secret ID Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={signUpForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={signUpForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                Sign Up
-              </Button>
-            </form>
-          </Form>
-        </TabsContent>
+              <TabsContent value="signup">
+                <Form {...signUpForm}>
+                  <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+                    <FormField
+                      control={signUpForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="secretIdNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secret ID Number</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      Sign Up
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
 
-        <TabsContent value="forgot">
-          <Form {...forgotPasswordForm}>
-            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPassword)} className="space-y-4">
-              <FormField
-                control={forgotPasswordForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={forgotPasswordForm.control}
-                name="secretIdNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secret ID Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={forgotPasswordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={forgotPasswordForm.control}
-                name="confirmNewPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                Reset Password
-              </Button>
-            </form>
-          </Form>
-        </TabsContent>
+              <TabsContent value="forgot">
+                <Form {...forgotPasswordForm}>
+                  <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPassword)} className="space-y-4">
+                    <FormField
+                      control={forgotPasswordForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={forgotPasswordForm.control}
+                      name="secretIdNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secret ID Number</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={forgotPasswordForm.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>New Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={forgotPasswordForm.control}
+                      name="confirmNewPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm New Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      Reset Password
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
             </Tabs>
           </div>
         </div>
