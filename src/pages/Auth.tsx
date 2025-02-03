@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ModeToggle } from "@/components/ModeToggle";
 
 // Define interface for profile data
 interface Profile {
@@ -68,6 +69,12 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate("/");
+    });
+  }, [navigate]);
 
   const signUpForm = useForm({
     resolver: zodResolver(signUpSchema),
@@ -240,13 +247,29 @@ export default function Auth() {
   };
 
   return (
-    <div className="container max-w-md mx-auto mt-8">
-      <Tabs defaultValue="signin" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="signin">Sign In</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          <TabsTrigger value="forgot">Forgot Password</TabsTrigger>
-        </TabsList>
+    <div className="min-h-screen">
+      <div className="container max-w-6xl mx-auto">
+        <header className="py-6 px-4 flex justify-end">
+          <ModeToggle />
+        </header>
+        
+        <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
+          <div className="space-y-6">
+            <h1 className="text-4xl font-bold tracking-tight">
+              Welcome to Our Platform
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Join our community and unlock access to amazing features and content.
+            </p>
+          </div>
+          
+          <div className="metallic-card p-6">
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="forgot">Forgot Password</TabsTrigger>
+              </TabsList>
 
         <TabsContent value="signin">
           <Form {...signInForm}>
@@ -420,7 +443,54 @@ export default function Auth() {
             </form>
           </Form>
         </TabsContent>
-      </Tabs>
+            </Tabs>
+          </div>
+        </div>
+
+        <div className="space-y-24 py-12">
+          <section className="space-y-6 text-center">
+            <h2 className="text-3xl font-bold">Features</h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="metallic-card p-6 space-y-4">
+                <h3 className="text-xl font-semibold">Content Creation</h3>
+                <p className="text-muted-foreground">
+                  Create and share amazing content with our community.
+                </p>
+              </div>
+              <div className="metallic-card p-6 space-y-4">
+                <h3 className="text-xl font-semibold">Analytics</h3>
+                <p className="text-muted-foreground">
+                  Track your performance with detailed analytics.
+                </p>
+              </div>
+              <div className="metallic-card p-6 space-y-4">
+                <h3 className="text-xl font-semibold">Transactions</h3>
+                <p className="text-muted-foreground">
+                  Manage your transactions securely and efficiently.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-6 text-center">
+            <h2 className="text-3xl font-bold">Why Choose Us?</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="metallic-card p-6 space-y-4">
+                <h3 className="text-xl font-semibold">Secure Platform</h3>
+                <p className="text-muted-foreground">
+                  Your data is protected with industry-standard security measures.
+                </p>
+              </div>
+              <div className="metallic-card p-6 space-y-4">
+                <h3 className="text-xl font-semibold">24/7 Support</h3>
+                <p className="text-muted-foreground">
+                  Our support team is always here to help you succeed.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
