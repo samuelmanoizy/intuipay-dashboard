@@ -280,7 +280,7 @@ export default function Auth() {
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                <TabsTrigger value="forgot">Forgot Password</TabsTrigger>
+                <TabsTrigger value="forgot">Reset Password</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin">
@@ -457,50 +457,6 @@ export default function Auth() {
               </TabsContent>
             </Tabs>
           </div>
-        </div>
-
-        <div className="space-y-24 py-12">
-          <section className="space-y-6 text-center">
-            <h2 className="text-3xl font-bold">Features</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="metallic-card p-6 space-y-4">
-                <h3 className="text-xl font-semibold">Content Creation</h3>
-                <p className="text-muted-foreground">
-                  Create and share amazing content with our community.
-                </p>
-              </div>
-              <div className="metallic-card p-6 space-y-4">
-                <h3 className="text-xl font-semibold">Analytics</h3>
-                <p className="text-muted-foreground">
-                  Track your performance with detailed analytics.
-                </p>
-              </div>
-              <div className="metallic-card p-6 space-y-4">
-                <h3 className="text-xl font-semibold">Transactions</h3>
-                <p className="text-muted-foreground">
-                  Manage your transactions securely and efficiently.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-6 text-center">
-            <h2 className="text-3xl font-bold">Why Choose Us?</h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="metallic-card p-6 space-y-4">
-                <h3 className="text-xl font-semibold">Secure Platform</h3>
-                <p className="text-muted-foreground">
-                  Your data is protected with industry-standard security measures.
-                </p>
-              </div>
-              <div className="metallic-card p-6 space-y-4">
-                <h3 className="text-xl font-semibold">24/7 Support</h3>
-                <p className="text-muted-foreground">
-                  Our support team is always here to help you succeed.
-                </p>
-              </div>
-            </div>
-          </section>
         </div>
       </div>
     </div>
