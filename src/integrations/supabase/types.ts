@@ -98,39 +98,6 @@ export type Database = {
         }
         Relationships: []
       }
-      transactions: {
-        Row: {
-          amount: number
-          created_at: string
-          id: string
-          recipient_name: string | null
-          recipient_phone: string | null
-          status: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          id?: string
-          recipient_name?: string | null
-          recipient_phone?: string | null
-          status?: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          id?: string
-          recipient_name?: string | null
-          recipient_phone?: string | null
-          status?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
