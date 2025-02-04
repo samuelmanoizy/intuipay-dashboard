@@ -23,7 +23,6 @@ export const CommentsSection = ({ contentId }: CommentsSectionProps) => {
   const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
-    // Fetch initial comments
     const fetchComments = async () => {
       const { data, error } = await supabase
         .from("comments")
@@ -41,7 +40,6 @@ export const CommentsSection = ({ contentId }: CommentsSectionProps) => {
 
     fetchComments();
 
-    // Subscribe to new comments
     const channel = supabase
       .channel("comments-channel")
       .on(
@@ -67,9 +65,19 @@ export const CommentsSection = ({ contentId }: CommentsSectionProps) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("Please sign in to comment");
+      return;
+    }
+
     const { error } = await supabase.from("comments").insert({
       content_id: contentId,
       message: newComment.trim(),
+      user_id: user.id,
     });
 
     if (error) {

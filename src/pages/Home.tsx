@@ -19,7 +19,7 @@ export default function Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("content")
-        .select("*")
+        .select("*, profiles(username)")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -30,38 +30,40 @@ export default function Home() {
   const activeContent = content?.find((item) => item.id === activeContentId) || content?.[0];
 
   return (
-    <div className="flex justify-center items-start gap-6 h-[calc(100vh-4rem)] p-6">
+    <div className="flex justify-center items-start gap-6 min-h-[calc(100vh-4rem)] p-6 max-w-[1920px] mx-auto">
       {/* Left Card - Content Info */}
-      <Card className="w-80 p-4">
+      <Card className="w-80 p-4 bg-gradient-to-br from-card to-secondary/30 backdrop-blur-sm">
         <ContentInfo
           thumbnailUrl={activeContent?.image_url}
+          userAvatar="/placeholder.svg"
+          username={activeContent?.profiles?.username}
           price={activeContent?.price}
           likes={activeContent?.likes}
         />
       </Card>
 
       {/* Center - Video Player */}
-      <div className="w-[400px]">
-        <VideoPlayer videoUrl={activeContent?.video_url} />
+      <div className="w-[400px] lg:w-[500px] xl:w-[600px]">
+        <VideoPlayer videoUrl={activeContent?.image_url} />
       </div>
 
       {/* Right Card - Comments/Followers */}
-      <Card className="w-80 flex flex-col h-full">
-        <div className="flex p-4 gap-2 border-b">
+      <Card className="w-80 flex flex-col h-[calc(100vh-8rem)] bg-gradient-to-br from-card to-secondary/30 backdrop-blur-sm">
+        <div className="flex p-4 gap-2 border-b border-secondary/50">
           <Button
             variant={activeView === "comments" ? "default" : "ghost"}
-            className="flex-1"
+            className="flex-1 group"
             onClick={() => setActiveView("comments")}
           >
-            <MessageSquare className="mr-2 h-4 w-4" />
+            <MessageSquare className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
             Comments
           </Button>
           <Button
             variant={activeView === "followers" ? "default" : "ghost"}
-            className="flex-1"
+            className="flex-1 group"
             onClick={() => setActiveView("followers")}
           >
-            <Users className="mr-2 h-4 w-4" />
+            <Users className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
             Followers
           </Button>
         </div>

@@ -43,7 +43,7 @@ export const ContentInfo = ({
           <img
             src={thumbnailUrl}
             alt="Content thumbnail"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full bg-secondary/50 flex items-center justify-center text-muted-foreground">
@@ -52,29 +52,33 @@ export const ContentInfo = ({
         )}
       </div>
 
-      <Avatar className="w-12 h-12 border-2 border-primary/20">
+      <Avatar className="w-16 h-16 border-2 border-primary/20 hover:border-primary/50 transition-colors">
         <AvatarImage src={userAvatar} />
-        <AvatarFallback>{username?.[0] ?? "U"}</AvatarFallback>
+        <AvatarFallback className="bg-secondary text-lg">{username?.[0] ?? "U"}</AvatarFallback>
       </Avatar>
 
-      <div className="flex items-center gap-2 bg-secondary/80 px-3 py-1.5 rounded-full">
-        <DollarSign className="w-4 h-4" />
-        <span className="font-medium">{price}</span>
+      <div className="flex items-center gap-2 bg-secondary/80 px-4 py-2 rounded-full animate-pulse-subtle">
+        <DollarSign className="w-5 h-5 text-primary" />
+        <span className="font-medium text-lg">{price}</span>
       </div>
 
       <div className="flex flex-col gap-2 w-full">
         <Button
           variant={isLiked ? "default" : "secondary"}
-          className="w-full"
+          className="w-full group hover:bg-primary/20 transition-colors"
           onClick={handleLike}
         >
-          <Heart className={isLiked ? "fill-current" : ""} />
-          <span>{likes}</span>
+          <Heart className={`${isLiked ? "fill-current" : ""} group-hover:scale-110 transition-transform`} />
+          <span className="ml-2">{likes}</span>
         </Button>
 
-        <Button variant="secondary" className="w-full" onClick={handleFollow}>
-          <UserPlus />
-          <span>Follow</span>
+        <Button
+          variant="secondary"
+          className="w-full group hover:bg-primary/20 transition-colors"
+          onClick={handleFollow}
+        >
+          <UserPlus className="group-hover:scale-110 transition-transform" />
+          <span className="ml-2">Follow</span>
         </Button>
       </div>
     </div>

@@ -14,7 +14,7 @@ export const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
   }, [videoUrl]);
 
   return (
-    <div className="relative aspect-[9/16] bg-black rounded-lg overflow-hidden">
+    <div className="relative aspect-[9/16] bg-black rounded-lg overflow-hidden metallic-card">
       {videoUrl ? (
         <video
           ref={videoRef}
