@@ -49,14 +49,14 @@ export default function Home() {
 
   return (
     <>
-      <div className="fixed top-4 right-4 md:hidden z-50">
+      <div className="fixed top-4 left-4 md:hidden z-50">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="start">
             {menuItems.map((item) => (
               <DropdownMenuItem key={item.path} asChild>
                 <Link to={item.path}>{item.label}</Link>
