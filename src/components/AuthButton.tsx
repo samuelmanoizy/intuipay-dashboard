@@ -1,9 +1,14 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-export function AuthButton() {
+interface AuthButtonProps {
+  className?: string;
+}
+
+export function AuthButton({ className }: AuthButtonProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -25,7 +30,7 @@ export function AuthButton() {
   };
 
   return (
-    <Button onClick={handleSignOut} variant="outline">
+    <Button onClick={handleSignOut} variant="outline" className={className}>
       Sign Out
     </Button>
   );

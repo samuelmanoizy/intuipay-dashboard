@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
 
@@ -38,10 +39,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <Link to={item.path}>{item.label}</Link>
                     </DropdownMenuItem>
                   ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <AuthButton className="w-full justify-start p-0 font-normal" />
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <AuthButton />
+            <div className="hidden md:block">
+              <AuthButton />
+            </div>
           </header>
           <main className="p-6">{children}</main>
         </div>
