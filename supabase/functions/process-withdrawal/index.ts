@@ -4,78 +4,80 @@ import { IntaSend } from 'npm:intasend-node'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    })
   }
 
   try {
-    // Parse request body
-    const requestData = await req.json()
-    const { phoneNumber, amount } = requestData
-    
+    console.log('Processing withdrawal request...')
+    const { amount, phoneNumber } = await req.json()
+    console.log('Request data:', { amount, phoneNumber })
+
     // Validate input
-    if (!phoneNumber || !amount) {
-      return new Response(
-        JSON.stringify({ error: 'Phone number and amount are required' }), 
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+    if (!amount || !phoneNumber) {
+      throw new Error('Amount and phone number are required')
     }
 
-    // Format phone number (ensure it starts with 254)
-    let formattedPhone = phoneNumber.replace(/^\+/, '').replace(/^0/, '254')
-    if (!formattedPhone.startsWith('254')) {
-      formattedPhone = '254' + formattedPhone
-    }
-
-    console.log('Processing M-Pesa withdrawal:', { formattedPhone, amount })
-
-    // Initialize IntaSend SDK with test credentials
+    // Clean phone number to ensure only digits
+    const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
+    
+    console.log('Initializing IntaSend client...')
     const intasend = new IntaSend({
-      token: Deno.env.get('INTASEND_TEST_SECRET_KEY'),
-      publishable_key: 'ISPubKey_test_c54e1f70-0859-4c79-b912-de3b3ae02e42',
-      test: true
+      token: Deno.env.get("INTASEND_API_KEY"),
+      publishableKey: Deno.env.get("INTASEND_SECRET_KEY"),
+      test: false
     })
 
-    // Create payout instance and process the withdrawal
+    console.log('Creating payout request...')
     const payouts = intasend.payouts()
-    const response = await payouts.mpesa({
+    
+    const payoutData = {
       currency: 'KES',
       requires_approval: 'NO',
       transactions: [{
-        name: 'Customer Withdrawal',
-        account: formattedPhone,
-        amount: amount.toString(),
-        narrative: 'Wallet Withdrawal'
+        name: 'Customer',
+        account: cleanPhoneNumber,
+        amount: parseFloat(amount).toFixed(2),
+        narrative: 'Wallet withdrawal'
       }]
-    })
-
-    console.log('IntaSend payout response:', response)
+    }
+    
+    console.log('Sending payout request with data:', payoutData)
+    const payoutResponse = await payouts.mpesa(payoutData)
+    console.log('Payout response:', payoutResponse)
 
     return new Response(
-      JSON.stringify({ success: true, data: response }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      JSON.stringify({
+        success: true,
+        data: payoutResponse
+      }),
+      { 
+        headers: corsHeaders,
+        status: 200 
       }
     )
 
   } catch (error) {
-    console.error('Error processing request:', error)
+    console.error('Error processing withdrawal:', error)
+    
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Error processing withdrawal',
-        details: error
+      JSON.stringify({
+        error: 'Failed to process withdrawal',
+        details: error.message,
+        stack: error.stack
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+      { 
+        headers: corsHeaders,
+        status: 500 
       }
     )
   }
