@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,8 +21,8 @@ export function TransactionInterface() {
 
   useEffect(() => {
     const intaSend = new window.IntaSend({
-      publicAPIKey: "ISPubKey_live_df8814b3-3787-42eb-8d25-c4a46391a0d4",
-      live: true,
+      publicAPIKey: "ISPubKey_test_c54e1f70-0859-4c79-b912-de3b3ae02e42",
+      live: false,
     })
       .on("COMPLETE", (results: any) => {
         console.log("Transaction successful", results);
