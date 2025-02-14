@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Define interface for profile data
 interface Profile {
   id: string;
   username: string;
@@ -103,17 +102,17 @@ export default function Auth() {
       setIsLoading(true);
       
       // First check if username already exists
-      const { data: existingUser, error: existingUserError } = await supabase
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('username')
+        .select()
         .eq('username', values.username)
         .maybeSingle();
 
-      if (existingUserError) {
-        throw existingUserError;
+      if (profileError) {
+        throw profileError;
       }
 
-      if (existingUser) {
+      if (existingProfile) {
         toast({
           variant: "destructive",
           title: "Error creating account",
@@ -122,16 +121,10 @@ export default function Auth() {
         return;
       }
 
-      // Sign up the user with metadata
+      // Sign up the user
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
-        options: {
-          data: {
-            username: values.username,
-            secret_id_number: values.secretIdNumber,
-          },
-        },
       });
 
       if (signUpError) {
@@ -143,6 +136,19 @@ export default function Auth() {
 
       if (!signUpData.user) {
         throw new Error("Failed to create user account");
+      }
+
+      // Create the profile
+      const { error: profileCreateError } = await supabase
+        .from('profiles')
+        .insert({
+          id: signUpData.user.id,
+          username: values.username,
+          secret_id_number: values.secretIdNumber,
+        });
+
+      if (profileCreateError) {
+        throw profileCreateError;
       }
 
       toast({
@@ -164,7 +170,7 @@ export default function Auth() {
   const onSignIn = async (values: z.infer<typeof signInSchema>) => {
     try {
       setIsLoading(true);
-      const { error, data } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
@@ -174,10 +180,6 @@ export default function Auth() {
           throw new Error("Invalid email or password. Please try again.");
         }
         throw error;
-      }
-
-      if (!data.user) {
-        throw new Error("No user data returned from authentication");
       }
 
       toast({
@@ -201,22 +203,17 @@ export default function Auth() {
       
       // First verify username and secret ID match
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select<"profiles", Profile>()
-        .eq("username", values.username)
-        .eq("secret_id_number", values.secretIdNumber)
+        .from('profiles')
+        .select()
+        .eq('username', values.username)
+        .eq('secret_id_number', values.secretIdNumber)
         .maybeSingle();
 
       if (profileError || !profile) {
         throw new Error("Invalid username or secret ID number. Please try again.");
       }
 
-      // Get user's email using the profile ID
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user?.email) {
-        throw new Error("Could not find user email");
-      }
-
+      // Update the user's password
       const { error: updateError } = await supabase.auth.updateUser({
         password: values.newPassword,
       });
